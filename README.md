@@ -7,15 +7,20 @@ We started by importing the code from:
 
 Version 4.0 (released on 18.09.12)
 
+## Our documentation:
+
+Our documentation is on our [github Wiki](https://github.com/rr14382/robot_code/wiki).
+
+
+## Original ftc_app documentation:
 A good source of documentation is:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;https://github.com/ftctechnh/ftc_app/wiki
 
 Note that the wiki is an "evergreen" document that is constantly being updated and edited.  It contains the most current information about the *FIRST* Tech Challenge software and control system.
 
-## Downloading the Project
-This repository does not contain the full history of the ftc_app git repository. It just contains our
-updates.
+## Getting Started
+To download this into Android Studio...
 
 ## Getting Help
 ### User Documentation and Tutorials
