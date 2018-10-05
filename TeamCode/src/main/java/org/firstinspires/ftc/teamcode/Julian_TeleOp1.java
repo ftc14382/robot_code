@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
@@ -58,6 +59,7 @@ public class Julian_TeleOp1 extends LinearOpMode {
     private DcMotor rightDrive = null;
     private DcMotor midarm = null;
     private DcMotor basearm = null;
+    private Servo grabber = null;
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
@@ -70,16 +72,19 @@ public class Julian_TeleOp1 extends LinearOpMode {
         rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
         midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
         basearm = hardwareMap.get(DcMotor.class, "base_arm");
+        grabber = hardwareMap.get(Servo.class,  "grabber");
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
         midarm.setDirection(DcMotor.Direction.FORWARD);
         basearm.setDirection(DcMotor.Direction.FORWARD);
+        grabber.setDirection(Servo.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
-
+        double grabberPosition;
+        grabberPosition =0.0;
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
@@ -88,6 +93,7 @@ public class Julian_TeleOp1 extends LinearOpMode {
             double rightPower;
             double midarmPower;
             double basearmPower;
+
 
             // Choose to drive using either Tank Mode, or POV Mode
             // Comment out the method that's not used.  The default below is POV.
@@ -104,7 +110,15 @@ public class Julian_TeleOp1 extends LinearOpMode {
             leftPower  = -gamepad1.left_stick_y ;
             rightPower = -gamepad1.right_stick_y ;
             midarmPower  =-0.5 * gamepad2.left_stick_y ;
-            basearmPower =-0.5 * gamepad2.right_stick_y ;
+            basearmPower = -gamepad2.right_stick_y ;
+            if (gamepad2.right_bumper) {
+                grabberPosition +=0.02 ;
+            } else if (gamepad2.left_bumper) {
+                grabberPosition -=0.02 ;
+            }
+
+
+
 
 
             // Send calculated power to wheels
@@ -112,10 +126,12 @@ public class Julian_TeleOp1 extends LinearOpMode {
             rightDrive.setPower(rightPower);
             midarm.setPower(midarmPower);
             basearm.setPower(basearmPower);
+            grabber.setPosition(grabberPosition);
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
             telemetry.addData("MotorsArm", "mid (%.2f), base (%.2f)", midarmPower, basearmPower);
+            telemetry.addData("Grabber", "Pos: (%.2f)", grabberPosition);
             telemetry.update();
         }
     }
