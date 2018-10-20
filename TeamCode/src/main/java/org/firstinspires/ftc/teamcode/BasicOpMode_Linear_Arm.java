@@ -56,7 +56,7 @@ public class BasicOpMode_Linear_Arm extends LinearOpMode {
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor midarm = null;
-    private DcMotor basearm = null;
+    //private DcMotor basearm = null;
 
     @Override
     public void runOpMode() {
@@ -67,12 +67,12 @@ public class BasicOpMode_Linear_Arm extends LinearOpMode {
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
         midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
-        basearm = hardwareMap.get(DcMotor.class, "base_arm");
+       // basearm = hardwareMap.get(DcMotor.class, "base_arm");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
         midarm.setDirection(DcMotor.Direction.FORWARD);
-        basearm.setDirection(DcMotor.Direction.FORWARD);
+       // basearm.setDirection(DcMotor.Direction.FORWARD);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -83,7 +83,7 @@ public class BasicOpMode_Linear_Arm extends LinearOpMode {
 
             // Setup a variable for each drive wheel to save power level for telemetry
             double midarmPower;
-            double basearmPower;
+          //  double basearmPower;
 
             // Choose to drive using either Tank Mode, or POV Mode
             // Comment out the method that's not used.  The default below is POV.
@@ -99,15 +99,16 @@ public class BasicOpMode_Linear_Arm extends LinearOpMode {
             // - This requires no math, but it is hard to drive forward slowly and keep straight.
             // leftPower  = -gamepad1.left_stick_y ;
             // rightPower = -gamepad1.right_stick_y ;
-            midarmPower  =-0.5 * gamepad2.left_stick_y ;
-            basearmPower = -gamepad2.right_stick_y ;
+            midarmPower  =-0.5 * gamepad2. ;
+            if (gamepad2.a)  {
+           // basearmPower = -gamepad2.right_stick_y ;
 
             // Send calculated power to wheels
             midarm.setPower(midarmPower);
-            basearm.setPower(basearmPower);
+          //  basearm.setPower(basearmPower);
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("MotorsArm", "mid (%.2f), base (%.2f)", midarmPower, basearmPower);
+            telemetry.addData("MotorsArm", "mid (%.2f), base (%.2f)", midarmPower); //basearmPower
             telemetry.update();
         }
     }
