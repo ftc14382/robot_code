@@ -124,6 +124,7 @@ public class Vuforia_Move_Test extends LinearOpMode {
     private boolean targetVisible = false;
 
     private enum TurnDirection {RIGHT,LEFT}
+    private enum DriveDirection {FORWARD, BACKWARD}
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
@@ -336,15 +337,26 @@ public class Vuforia_Move_Test extends LinearOpMode {
         // set the power on the drives
         leftDrive.setPower(0.75);
         rightDrive.setPower(-0.75);
-        try {
-            Thread.sleep(turnTimeMax);
-        }  catch (InterruptedException e)  {
-
-        }
+        sleep(turnTimeMax);
 
         //  set the power on the drives back to zero
         leftDrive.setPower(0);
         rightDrive.setPower(0);
 
+        sleep(500);
+    }
+
+    void straight (int driveTimeMax, DriveDirection dir) {
+        if(dir == DriveDirection.FORWARD) {
+            leftDrive.setPower(0.75);
+            rightDrive.setPower(0.75);
+        } else {
+            leftDrive.setPower(-0.75);
+            rightDrive.setPower(-0.75);
+        }
+        sleep(driveTimeMax);
+
+        leftDrive.setPower(0);
+        rightDrive.setPower(0);
     }
 }
