@@ -92,7 +92,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * is explained below.
  */
 
-@TeleOp(name="Concept: Vuforia Rover Nav", group ="Concept")
+@TeleOp(name="vuforia test1", group ="Concept")
 //@Disabled
 public class Vuforia_Move_Test extends LinearOpMode {
 
@@ -325,7 +325,7 @@ public class Vuforia_Move_Test extends LinearOpMode {
                 telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             }
             else {
-                turn(500,TurnDirection.LEFT);
+                turn(50,TurnDirection.LEFT);
                 telemetry.addData("Visible Target", "none");
             }
             telemetry.update();
@@ -333,16 +333,15 @@ public class Vuforia_Move_Test extends LinearOpMode {
     }
 
     void turn (int turnTimeMax,TurnDirection dir )  {
-
-        ElapsedTime  turnTime = new ElapsedTime();
         // set the power on the drives
         leftDrive.setPower(0.75);
-        rightDrive.setPower(0.75);
+        rightDrive.setPower(-0.75);
         try {
-            turnTime.wait(turnTimeMax);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.sleep(turnTimeMax);
+        }  catch (InterruptedException e)  {
+
         }
+
         //  set the power on the drives back to zero
         leftDrive.setPower(0);
         rightDrive.setPower(0);
