@@ -31,7 +31,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
@@ -48,14 +48,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Servo_Test opmode", group="Linear Opmode")
+@TeleOp(name="Servo_Test1", group="Linear Opmode")
 //@Disabled
 public class BasicOpMode_Linear_Servo_Grabber extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private Servo grabber1 = null;
-    private Servo grabber2 = null;
+    private CRServo grabber1 = null;
+    private CRServo grabber2 = null;
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
@@ -64,21 +64,19 @@ public class BasicOpMode_Linear_Servo_Grabber extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        grabber1 = hardwareMap.get(Servo.class,  "grabber1");
-        grabber2 = hardwareMap.get(Servo.class,  "grabber2");
+        grabber1 = hardwareMap.get(CRServo.class,  "grabber1");
+        grabber2 = hardwareMap.get(CRServo.class,  "grabber2");
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-        grabber1.setDirection(Servo.Direction.FORWARD);
-        grabber2.setDirection(Servo.Direction.REVERSE);
+        grabber1.setDirection(CRServo.Direction.FORWARD);
+        grabber2.setDirection(CRServo.Direction.REVERSE);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
-        double grabber1Position;
-        double grabber2Position;
-        grabber1Position =0.0;
-        grabber2Position =0.0;
+        double grabberPower;
+        grabberPower = 0;
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
@@ -96,11 +94,11 @@ public class BasicOpMode_Linear_Servo_Grabber extends LinearOpMode {
             // Tank Mode uses one stick to control each wheel.
 
             if (gamepad2.right_bumper) {
-                grabber1Position +=0.02 ;
-                grabber2Position +=0.02 ;
+                grabberPower =0.5 ;
             } else if (gamepad2.left_bumper) {
-                grabber1Position -=0.02 ;
-                grabber2Position -=0.02 ;
+                grabberPower =-0.5 ;
+            } else {
+                grabberPower = 0;
             }
 
 
@@ -109,12 +107,11 @@ public class BasicOpMode_Linear_Servo_Grabber extends LinearOpMode {
 
             // Send calculated power to wheels
 
-            grabber1.setPosition(grabber1Position);
-            grabber2.setPosition(grabber2Position);
+            grabber1.setPower(grabberPower);
+            grabber2.setPower(grabberPower);
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Grabber1", "Pos: (%.2f)", grabber1Position);
-            telemetry.addData("Grabber2", "Pos: (%.2f)", grabber2Position);
+            telemetry.addData("Grabber", "Power: (%.2f)", grabberPower);
             telemetry.update();
         }
     }

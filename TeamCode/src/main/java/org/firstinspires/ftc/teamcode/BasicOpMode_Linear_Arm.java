@@ -99,16 +99,16 @@ public class BasicOpMode_Linear_Arm extends LinearOpMode {
             // - This requires no math, but it is hard to drive forward slowly and keep straight.
             // leftPower  = -gamepad1.left_stick_y ;
             // rightPower = -gamepad1.right_stick_y ;
-            midarmPower  =-0.5 * gamepad2. ;
-            if (gamepad2.a)  {
+            //midarmPower  =-0.5 * gamepad2. ;
+            //if (gamepad2.a)  {
            // basearmPower = -gamepad2.right_stick_y ;
 
             // Send calculated power to wheels
-            midarm.setPower(midarmPower);
+            //midarm.setPower(midarmPower);
           //  basearm.setPower(basearmPower);
 
             // Show the elapsed game time and wheel power.
-            telemetry.addData("MotorsArm", "mid (%.2f), base (%.2f)", midarmPower); //basearmPower
+         //   telemetry.addData("MotorsArm", "mid (%.2f), base (%.2f)", midarmPower); //basearmPower
             telemetry.update();
         }
     }
