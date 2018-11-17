@@ -270,9 +270,9 @@ public class Vuforia_Move_Test extends LinearOpMode {
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 208;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 210;   // eg: Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 178;     // eg: Camera is ON the robot's center line
+        final int CAMERA_FORWARD_DISPLACEMENT  = 206;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 114;   // eg: Camera is 200 mm above ground
+        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
@@ -326,7 +326,7 @@ public class Vuforia_Move_Test extends LinearOpMode {
                 telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             }
             else {
-                turn(50,TurnDirection.LEFT);
+                turn(300,TurnDirection.LEFT);
                 telemetry.addData("Visible Target", "none");
             }
             telemetry.update();
@@ -343,7 +343,7 @@ public class Vuforia_Move_Test extends LinearOpMode {
         leftDrive.setPower(0);
         rightDrive.setPower(0);
 
-        sleep(500);
+        sleep(2000);
     }
 
     void straight (int driveTimeMax, DriveDirection dir) {
