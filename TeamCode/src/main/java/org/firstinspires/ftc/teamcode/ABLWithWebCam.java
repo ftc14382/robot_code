@@ -96,7 +96,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * is explained below.
  */
 
-@Autonomous(name="BlueLeftWeb", group ="Blue")
+@Autonomous(name="BlueLeftWeb", group ="Competition")
 //@Disabled
 public class ABLWithWebCam extends LinearOpMode {
 
@@ -133,7 +133,7 @@ public class ABLWithWebCam extends LinearOpMode {
     private enum DriveDirection {FORWARD, BACKWARD}
     private enum Quad {RED_LEFT, BLUE_LEFT, RED_RIGHT, BLUE_RIGHT}
 
-    private static final Quad  startQuad =  Quad.BLUE_LEFT;
+    private static final Quad  startQuad =  Quad.BLUE_LEFT;//This determines the starting position
 
     private Position Depot = new Position();
     private Position crater = new Position();
@@ -152,7 +152,7 @@ public class ABLWithWebCam extends LinearOpMode {
 
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
     static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // This is < 1.0 if geared UP
-    static final double     WHEEL_DIAMETER_INCHES   = 3.5 ;//was 4     // For figuring circumference
+    static final double     WHEEL_DIAMETER_INCHES   = 4 ;//was 4     // For figuring circumference
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double     DRIVE_SPEED             = 0.6;
@@ -163,16 +163,16 @@ public class ABLWithWebCam extends LinearOpMode {
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
             Depot.x = -47;//-48//-56
-            Depot.y = 57;//58//64
+            Depot.y = 55;//58//64
 
             crater.x = 46;
-            crater.y = 56;
+            crater.y = 54;
         } else {
             Depot.x = 47;//-48//-56
-            Depot.y = -57;//58//64
+            Depot.y = -54;//58//64
 
             crater.x = -46;
-            crater.y = -56;
+            crater.y = -54;
         }
 
         telemetry.addData("Status", "Initialized");
@@ -340,9 +340,9 @@ public class ABLWithWebCam extends LinearOpMode {
             encoderDrive(TURN_SPEED, degreesToInches(75),degreesToInches(-75),2.0);  //Trying to turn
             encoderDrive(DRIVE_SPEED,11,11,5.0);
         } else {
-            encoderDrive(DRIVE_SPEED,22,22,4.0);
-            encoderDrive(TURN_SPEED, degreesToInches(75),degreesToInches(-75),2.0);  //Trying to turn
-            encoderDrive(DRIVE_SPEED,11,11,5.0);
+            encoderDrive(DRIVE_SPEED,24,24,4.0);
+            encoderDrive(TURN_SPEED, degreesToInches(-75),degreesToInches(75),2.0);  //Trying to turn
+            encoderDrive(DRIVE_SPEED,12,12,5.0);
         }
 
         /** Start tracking the data sets we care about. */
@@ -386,26 +386,53 @@ public class ABLWithWebCam extends LinearOpMode {
         }
         else {
             if (startQuad == Quad.BLUE_LEFT) {
-                robotInfo.x = -28;//-16
-                robotInfo.y = 39;//36
-                robotInfo.degrees = 30;
+                robotInfo.x = -21;//-16
+                robotInfo.y = 41;//36
+                robotInfo.degrees = 60;
+            } else if(startQuad == Quad.RED_LEFT){
+                robotInfo.x = 19;//-16
+                robotInfo.y = -44;//36
+                robotInfo.degrees = -120;
+            } else if(startQuad == Quad.RED_RIGHT){
+                robotInfo.x = -23;//-16
+                robotInfo.y = -46;//36
+                robotInfo.degrees = -60;
+            } else if(startQuad == Quad.BLUE_RIGHT){
+                robotInfo.x = 21;//-16
+                robotInfo.y = 41;//36
+                robotInfo.degrees = 120;
             }
             telemetry.addData("Visible Target", "none");
         }
         telemetry.update();//End Viuforia
         //sleep(10000);
 
-        driveTo(robotInfo, Depot);
-        encoderDrive(TURN_SPEED, degreesToInches(190), degreesToInches(-190), 6);
-        robotInfo.degrees = robotInfo.degrees - 190;
+        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+            driveTo(robotInfo, Depot);
+            encoderDrive(TURN_SPEED, degreesToInches(190), degreesToInches(-190), 6);
+            robotInfo.degrees = robotInfo.degrees - 190;
 
-        robot.marker.setPower(0.6);
-        sleep(1100);
-        robot.marker.setPower(-0.6);
-        sleep(1050);
-        robot.marker.setPower(0);
+            robot.marker.setPower(0.6);
+            sleep(1100);
+            robot.marker.setPower(-0.6);
+            sleep(1050);
+            robot.marker.setPower(0);
 
-        driveTo(robotInfo, crater);
+            driveTo(robotInfo, crater);
+        } else {
+            driveTo(robotInfo, Depot);
+            encoderDrive(TURN_SPEED, degreesToInches(190), degreesToInches(-190), 6);
+            robotInfo.degrees = robotInfo.degrees - 190;
+
+            robot.marker.setPower(0.6);
+            sleep(1100);
+            robot.marker.setPower(-0.6);
+            sleep(1050);
+            robot.marker.setPower(0);
+
+            driveTo(robotInfo, crater);
+        }
+
 
     }
 
