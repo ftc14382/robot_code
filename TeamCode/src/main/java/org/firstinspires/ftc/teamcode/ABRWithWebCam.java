@@ -29,14 +29,20 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
@@ -47,11 +53,7 @@ import java.util.List;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
-import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
-import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
-
 
 /**
  * This 2018-2019 OpMode illustrates the basics of using the Vuforia localizer to determine
@@ -91,9 +93,11 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * is explained below.
  */
 
-@TeleOp(name="Concept: Vuforia Rover Nav", group ="Concept")
-@Disabled
-public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
+@Autonomous(name="BlueRightWeb", group ="Competition")
+//@Disabled
+public class ABRWithWebCam extends LinearOpMode {
+
+    HardwarePushbot robot       = new HardwarePushbot();
 
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
@@ -107,7 +111,7 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
      * Once you've obtained a license key, copy the string from the Vuforia web site
      * and paste it in to your code on the next line, between the double quotes.
      */
-    private static final String VUFORIA_KEY = " -- YOUR NEW VUFORIA KEY GOES HERE  --- ";
+    private static final String VUFORIA_KEY = "ASiIF9r/////AAABmbB85zU3k0g3qzF1DLbC7GUnvGVHWKDgtHLp6I/mzHMkcRm8A0oZl2woG1jqog81fIG7hAfVTp50Fj3sgLTQCqJ/sy9mZ/SQzMh2E3EBTIqS4ndxzRR0KGqW62bmVqQN69a7cuamH1QC4y3yiTaEDha8JoQF7kS3K32S6bziY2MYoBO8PCegD6dsnhtAH4VnAwIeiM/dCvhDXh1FuLFfLZmoExZGKasu20D3hqlvVRFoa7jUIIdzEEbuCM70asfMyzHk1ZdqgpBAqFOtxoyVgF0/ackncBT+hYFqfBbPkFGwiLiFED/8OBiMWRLVm4raAYo9NIgXqDFJhghNXqL8OMPwyuYYJuhZfqeg0z39M3fr";
 
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
@@ -117,18 +121,78 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
 
     // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
     // Valid choices are:  BACK or FRONT
-    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
+    //private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
 
     private OpenGLMatrix lastLocation = null;
     private boolean targetVisible = false;
+
+    private enum TurnDirection {RIGHT,LEFT}
+    private enum DriveDirection {FORWARD, BACKWARD}
+    private enum Quad {RED_LEFT, BLUE_LEFT, RED_RIGHT, BLUE_RIGHT}
+
+    private static final Quad  startQuad =  Quad.BLUE_RIGHT;//This determines the starting position
+
+    private Position Depot = new Position();
+    private Position crater = new Position();
+    private Position transfer = new Position();
+
 
     /**
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
     VuforiaLocalizer vuforia;
+    WebcamName webcamName;
+
+    private ElapsedTime runtime = new ElapsedTime();
+    private DcMotor leftDrive = null;
+    private DcMotor rightDrive = null;
+
+    static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // This is < 1.0 if geared UP
+    static final double     WHEEL_DIAMETER_INCHES   = 4 ;//was 4     // For figuring circumference
+    static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double     DRIVE_SPEED             = 0.6;
+    static final double     TURN_SPEED              = 0.4;
 
     @Override public void runOpMode() {
+        webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
+        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
+            Depot.x = -47;//-48//-56
+            Depot.y = 56;//58//64
+
+            transfer.x = 0;
+            transfer.y = 60;
+
+            crater.x = 46;
+            crater.y = 52.5;
+        } else {
+            Depot.x = 47;//-48//-56
+            Depot.y = -55;//58//64
+
+            transfer.x = 0;
+            transfer.y = -60;
+
+            crater.x = -46;
+            crater.y = -52.5;
+        }
+
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
+
+        // Initialize the hardware variables. Note that the strings used here as parameters
+        // to 'get' must correspond to the names assigned during the robot configuration
+        // step (using the FTC Robot Controller app on the phone).
+        robot.init(hardwareMap);
+        //leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
+        //rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
+
+        // Most robots need the motor on one side to be reversed to drive forward
+        // Reverse the motor that runs backwards when connected directly to the battery
+        //leftDrive.setDirection(DcMotor.Direction.FORWARD);
+        //rightDrive.setDirection(DcMotor.Direction.REVERSE);
         /*
          * Configure Vuforia by creating a Parameter object, and passing it to the Vuforia engine.
          * We can pass Vuforia the handle to a camera preview resource (on the RC phone);
@@ -140,7 +204,9 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
         // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY ;
-        parameters.cameraDirection   = CAMERA_CHOICE;
+        //parameters.cameraDirection   = CAMERA_CHOICE;
+        parameters.cameraName = webcamName;
+
 
         //  Instantiate the Vuforia engine
         vuforia = ClassFactory.getInstance().createVuforia(parameters);
@@ -250,19 +316,20 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
+        final int CAMERA_FORWARD_DISPLACEMENT  = 241;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 101;   // eg: Camera is 200 mm above ground
         final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
-        OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
+
+        OpenGLMatrix robotFromCamera = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
-                        CAMERA_CHOICE == FRONT ? 90 : -90, 0, 0));
+                .multiplied(Orientation.getRotationMatrix(AxesReference.EXTRINSIC, AxesOrder.XZY,AngleUnit.DEGREES,
+                        90, 90, 0));
 
         /**  Let all the trackable listeners know where the phone is.  */
         for (VuforiaTrackable trackable : allTrackables)
         {
-            ((VuforiaTrackableDefaultListener)trackable.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+            ((VuforiaTrackableDefaultListener)trackable.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
         }
 
         /** Wait for the game to begin */
@@ -270,42 +337,199 @@ public class ConceptVuforiaNavRoverRuckus extends LinearOpMode {
         telemetry.update();
         waitForStart();
 
+        RobotInfo robotInfo = new RobotInfo();
+
+        encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
+        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+            encoderDrive(DRIVE_SPEED,22,22,4.0);
+            encoderDrive(TURN_SPEED, degreesToInches(75),degreesToInches(-75),2.0);  //Trying to turn
+            encoderDrive(DRIVE_SPEED,11,11,5.0);
+        } else {
+            encoderDrive(DRIVE_SPEED,24,24,4.0);
+            encoderDrive(TURN_SPEED, degreesToInches(-75),degreesToInches(75),2.0);  //Trying to turn
+            encoderDrive(DRIVE_SPEED,12,12,5.0);
+        }
+
         /** Start tracking the data sets we care about. */
         targetsRoverRuckus.activate();
-        while (opModeIsActive()) {
 
-            // check all the trackable target to see which one (if any) is visible.
-            targetVisible = false;
-            for (VuforiaTrackable trackable : allTrackables) {
-                if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                    telemetry.addData("Visible Target", trackable.getName());
-                    targetVisible = true;
 
-                    // getUpdatedRobotLocation() will return null if no new information is available since
-                    // the last time that call was made, or if the trackable is not currently visible.
-                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
-                    if (robotLocationTransform != null) {
-                        lastLocation = robotLocationTransform;
-                    }
-                    break;
+        double leftPower;
+        double rightPower;
+        sleep(1000);
+        // check all the trackable target to see which one (if any) is visible.
+        targetVisible = false;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                telemetry.addData("Visible Target", trackable.getName());
+                targetVisible = true;
+
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
                 }
+                break;
+            }
+        }
+
+        // Provide feedback as to where the robot is located (if we know).
+        if (targetVisible) {
+            VectorF translation; // translation of robot center
+            Orientation rotation; // rotation of robot
+            // express position (translation) of robot in inches.
+            translation = lastLocation.getTranslation();
+            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+            robotInfo.x = translation.get(0) / mmPerInch;
+            robotInfo.y = translation.get(1) / mmPerInch;
+            // express the rotation of the robot in degrees.
+            rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+            robotInfo.degrees = rotation.thirdAngle;
+        }
+        else {
+            if (startQuad == Quad.BLUE_LEFT) {
+                robotInfo.x = -21;//-16
+                robotInfo.y = 41;//36
+                robotInfo.degrees = 60;
+            } else if(startQuad == Quad.RED_LEFT){
+                robotInfo.x = 19;//-16
+                robotInfo.y = -44;//36
+                robotInfo.degrees = -120;
+            } else if(startQuad == Quad.RED_RIGHT){
+                robotInfo.x = -23;//-16
+                robotInfo.y = -46;//36
+                robotInfo.degrees = -60;
+            } else if(startQuad == Quad.BLUE_RIGHT){
+                robotInfo.x = 21;//-16
+                robotInfo.y = 41;//36
+                robotInfo.degrees = 120;
+            }
+            telemetry.addData("Visible Target", "none");
+        }
+        telemetry.update();//End Viuforia
+        //sleep(10000);
+
+        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+            driveTo(robotInfo, Depot);
+            encoderDrive(TURN_SPEED, degreesToInches(190), degreesToInches(-190), 6);
+            robotInfo.degrees = robotInfo.degrees - 190;
+
+            robot.marker.setPower(0.6);
+            sleep(1100);
+            robot.marker.setPower(-0.6);
+            sleep(1050);
+            robot.marker.setPower(0);
+
+            driveTo(robotInfo, transfer);
+            driveTo(robotInfo, crater);
+        } else {
+            driveTo(robotInfo, Depot);
+            encoderDrive(TURN_SPEED, degreesToInches(190), degreesToInches(-190), 6);
+            robotInfo.degrees = robotInfo.degrees - 190;
+
+            robot.marker.setPower(0.6);
+            sleep(1100);
+            robot.marker.setPower(-0.6);
+            sleep(1050);
+            robot.marker.setPower(0);
+
+            driveTo(robotInfo, transfer);
+            driveTo(robotInfo, crater);
+        }
+
+
+    }
+
+    public double degreesToInches(double degrees) {
+        double Inches = (degrees * 14.2)/COUNTS_PER_INCH;
+        return Math.round(Inches);
+    }
+
+    public void driveTo(RobotInfo r, Position p) {
+        double deltaX = p.x - r.x;
+        double deltaY = p.y - r.y;
+        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        double theta = Math.atan2(deltaY, deltaX);
+        double turn = Math.toDegrees(theta) - r.degrees;
+        if (turn > 180) {
+            turn -= 360;
+        }
+        if (turn < -180) {
+            turn += 360;
+        }
+        encoderDrive(TURN_SPEED, -degreesToInches(turn), degreesToInches(turn), 5);
+        encoderDrive(DRIVE_SPEED, distance, distance, 6);
+        r.x = p.x;
+        r.y = p.y;
+        r.degrees = Math.toDegrees(theta);
+        telemetry.addData("RobotX:", r.x);
+        telemetry.addData("RobotY", r.y);
+        telemetry.addData("Robot Heading", r.degrees);
+    }
+
+    /*
+     *  Method to perfmorm a relative move, based on encoder counts.
+     *  Encoders are not reset as the move is based on the current position.
+     *  Move will stop if any of three conditions occur:
+     *  1) Move gets to the desired position
+     *  2) Move runs out of time
+     *  3) Driver stops the opmode running.
+     */
+    public void encoderDrive(double speed,
+                             double leftInches, double rightInches,
+                             double timeoutS) {
+        int newLeftTarget;
+        int newRightTarget;
+
+        // Ensure that the opmode is still active
+        if (opModeIsActive()) {
+
+            // Determine new target position, and pass to motor controller
+            newLeftTarget = robot.leftDrive.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
+            newRightTarget = robot.rightDrive.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
+            robot.leftDrive.setTargetPosition(newLeftTarget);
+            robot.rightDrive.setTargetPosition(newRightTarget);
+
+            // Turn On RUN_TO_POSITION
+            robot.leftDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            robot.rightDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // reset the timeout time and start motion.
+            runtime.reset();
+            robot.leftDrive.setPower(Math.abs(speed));
+            robot.rightDrive.setPower(Math.abs(speed));
+
+            // keep looping while we are still active, and there is time left, and both motors are running.
+            // Note: We use (isBusy() && isBusy()) in the loop test, which means that when EITHER motor hits
+            // its target position, the motion will stop.  This is "safer" in the event that the robot will
+            // always end the motion as soon as possible.
+            // However, if you require that BOTH motors have finished their moves before the robot continues
+            // onto the next step, use (isBusy() || isBusy()) in the loop test.
+            while (opModeIsActive() &&
+                    (runtime.seconds() < timeoutS) &&
+                    (robot.leftDrive.isBusy() && robot.rightDrive.isBusy())) {
+
+                // Display it for the driver.
+                telemetry.addData("Path1",  "Running to %7d :%7d", newLeftTarget,  newRightTarget);
+                telemetry.addData("Path2",  "Running at %7d :%7d",
+                        robot.leftDrive.getCurrentPosition(),
+                        robot.rightDrive.getCurrentPosition());
+                telemetry.update();
             }
 
-            // Provide feedback as to where the robot is located (if we know).
-            if (targetVisible) {
-                // express position (translation) of robot in inches.
-                VectorF translation = lastLocation.getTranslation();
-                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+            // Stop all motion;
+            robot.leftDrive.setPower(0);
+            robot.rightDrive.setPower(0);
 
-                // express the rotation of the robot in degrees.
-                Orientation rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-            }
-            else {
-                telemetry.addData("Visible Target", "none");
-            }
-            telemetry.update();
+            // Turn off RUN_TO_POSITION
+            robot.leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            robot.rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            //  sleep(250);   // optional pause after each move
         }
     }
+
 }
