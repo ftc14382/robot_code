@@ -35,6 +35,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 
 /**
  * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
@@ -49,7 +52,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Everything Drive", group="Linear Opmode")
+@TeleOp(name="Everything Arcade Drive", group="Linear Opmode")
 //@Disabled
 public class DriveGrabberArm extends LinearOpMode {
 
@@ -57,8 +60,8 @@ public class DriveGrabberArm extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor leftDrive = null;
     private DcMotor rightDrive = null;
-    private DcMotor midarm1 = null;
-    private DcMotor midarm2 = null;
+    private DcMotor midarm = null;
+    private DcMotor lifter = null;
     private CRServo grabber1 = null;
     private CRServo grabber2 = null;
     //private DcMotor basearm = null;
@@ -73,8 +76,8 @@ public class DriveGrabberArm extends LinearOpMode {
 
         leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
         rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
-        midarm1  = hardwareMap.get(DcMotor.class, "mid_arm");
-        midarm2 = hardwareMap.get(DcMotor.class, "mid_arm2");
+        midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
+        lifter = hardwareMap.get(DcMotor.class, "lifter");
         grabber1 = hardwareMap.get(CRServo.class,  "grabber1");
         grabber2 = hardwareMap.get(CRServo.class,  "grabber2");
         //basearm = hardwareMap.get(DcMotor.class, "base_arm");
@@ -84,8 +87,8 @@ public class DriveGrabberArm extends LinearOpMode {
 
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
-        midarm1.setDirection(DcMotor.Direction.FORWARD);
-        midarm2.setDirection(DcMotor.Direction.FORWARD);
+        midarm.setDirection(DcMotor.Direction.FORWARD);
+        lifter.setDirection(DcMotor.Direction.FORWARD);
         grabber1.setDirection(CRServo.Direction.FORWARD);
         grabber2.setDirection(CRServo.Direction.REVERSE);
         //basearm.setDirection(DcMotor.Direction.FORWARD);
@@ -97,8 +100,13 @@ public class DriveGrabberArm extends LinearOpMode {
         double turn;
         double speedChange;//driving
         double armSpeedChange;//midarm
-        double midarmPower;
+        double midarmPower = 0;
+        double lifterPower = 0;
         double grabberPower;
+        boolean useMidarm = FALSE;
+        int starPositionArm = midarm.getCurrentPosition();
+        int currentPositionArm = starPositionArm - midarm.getCurrentPosition();
+        int targetPositionArm;
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
@@ -107,6 +115,7 @@ public class DriveGrabberArm extends LinearOpMode {
             //double rightPower;
             //double midarmPower;
             //double basearmPower;
+            midarmPower = 0;
 
 
             // Choose to drive using either Tank Mode, or POV Mode
@@ -137,8 +146,48 @@ public class DriveGrabberArm extends LinearOpMode {
                 leftPower  = (gamepad1.left_stick_y - turn) * speedChange ;
                 rightPower = (gamepad1.left_stick_y + turn) * speedChange;
             }
-            armSpeedChange = 1-(gamepad2.right_trigger * 0.8);
-            midarmPower  =(-0.5 * gamepad2.left_stick_y) * armSpeedChange;
+
+            if (gamepad2.x) {
+                targetPositionArm = starPositionArm;
+                midarm.setTargetPosition(targetPositionArm);
+                midarm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                midarm.setPower(0.5);
+                telemetry.addData("Arm", "Moving to Rest");
+                useMidarm = FALSE;
+            } else if(gamepad2.y) {
+                targetPositionArm = starPositionArm + 240;//340
+                midarm.setTargetPosition(targetPositionArm);
+                midarm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                midarm.setPower(0.5);
+                telemetry.addData("Arm", "Moving to Drop Position");
+                useMidarm = FALSE;
+            } else if(gamepad2.b) {
+                targetPositionArm = starPositionArm + 537;//was 653
+                midarm.setTargetPosition(targetPositionArm);
+                midarm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                midarm.setPower(0.5);
+                telemetry.addData("Arm", "Moving to Pickup Postion");
+                useMidarm = FALSE;
+            }
+            //midarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            armSpeedChange = 1-(gamepad2.right_trigger * 0.4);
+            if(gamepad2.left_stick_y != 0) {
+                midarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                midarmPower=(0.8 * gamepad2.left_stick_y) * armSpeedChange;//*0.5
+                useMidarm = TRUE;
+            } else if(midarm.isBusy()) {
+            } else {
+                midarmPower = 0;
+                useMidarm = TRUE;
+            }
+            if (gamepad2.b && gamepad2.y) {
+                lifterPower = 0.9;//for raising I commented this out untill we get the lifter
+            } else if(gamepad2.x && gamepad2.a){
+                lifterPower = -0.8;//for lowering
+            } else {
+                lifterPower = 0.0;
+            }
 
             if (gamepad2.right_bumper) {
                 grabberPower = 0.97;
@@ -157,8 +206,10 @@ public class DriveGrabberArm extends LinearOpMode {
             // Send calculated power to wheels
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
-            midarm1.setPower(midarmPower);
-            midarm2.setPower(midarmPower);
+            if(useMidarm == TRUE){
+                midarm.setPower(midarmPower);
+            }
+            lifter.setPower(lifterPower);
             grabber1.setPower(grabberPower);
             grabber2.setPower(grabberPower);
             //basearm.setPower(basearmPower);
