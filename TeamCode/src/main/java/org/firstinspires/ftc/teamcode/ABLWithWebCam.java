@@ -33,6 +33,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.RobotLog;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -99,7 +100,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
 @Autonomous(name="BlueLeftWeb", group ="Competition")
 //@Disabled
 public class ABLWithWebCam extends LinearOpMode {
-
+public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
 
     /*
@@ -137,6 +138,7 @@ public class ABLWithWebCam extends LinearOpMode {
 
     private Position Depot = new Position();
     private Position crater = new Position();
+    private Position transfer = new Position();
 
 
     /**
@@ -156,23 +158,29 @@ public class ABLWithWebCam extends LinearOpMode {
     static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
     static final double     DRIVE_SPEED             = 0.6;
-    static final double     TURN_SPEED              = 0.5;
+    static final double     TURN_SPEED              = 0.4;
 
     @Override public void runOpMode() {
         webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
             Depot.x = -47;//-48//-56
-            Depot.y = 55;//58//64
+            Depot.y = 56;//58//64
+
+            transfer.x = 0;
+            transfer.y = 60;
 
             crater.x = 46;
-            crater.y = 54;
+            crater.y = 52.5;
         } else {
             Depot.x = 47;//-48//-56
-            Depot.y = -54;//58//64
+            Depot.y = -55;//58//64
+
+            transfer.x = 0;
+            transfer.y = -60;
 
             crater.x = -46;
-            crater.y = -54;
+            crater.y = -52.5;
         }
 
         telemetry.addData("Status", "Initialized");
@@ -335,6 +343,7 @@ public class ABLWithWebCam extends LinearOpMode {
 
         RobotInfo robotInfo = new RobotInfo();
 
+        encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
             encoderDrive(DRIVE_SPEED,22,22,4.0);
             encoderDrive(TURN_SPEED, degreesToInches(75),degreesToInches(-75),2.0);  //Trying to turn
@@ -371,6 +380,7 @@ public class ABLWithWebCam extends LinearOpMode {
 
         // Provide feedback as to where the robot is located (if we know).
         if (targetVisible) {
+            RobotLog.ii(Tag, "Target Visible");
             VectorF translation; // translation of robot center
             Orientation rotation; // rotation of robot
             // express position (translation) of robot in inches.
@@ -418,6 +428,7 @@ public class ABLWithWebCam extends LinearOpMode {
             sleep(1050);
             robot.marker.setPower(0);
 
+            driveTo(robotInfo, transfer);
             driveTo(robotInfo, crater);
         } else {
             driveTo(robotInfo, Depot);
@@ -430,6 +441,7 @@ public class ABLWithWebCam extends LinearOpMode {
             sleep(1050);
             robot.marker.setPower(0);
 
+            driveTo(robotInfo, transfer);
             driveTo(robotInfo, crater);
         }
 
