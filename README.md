@@ -1,9 +1,11 @@
 ## Welcome!
-This GitHub repository is the code for the FIRST Tech Challenge Competition team 14382.
+This GitHub repository is the code for the FIRST Tech Challenge Competition Team 14382.
 
 For the most part, this code is a copy of:
 
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;git clone --depth=1 https://github.com/ftctechnh/ftc_app.git</p>
+
+The work of Team 14382 is under the TeamCode directory.
 
 Version 4.3 (released on 20181031)
 
