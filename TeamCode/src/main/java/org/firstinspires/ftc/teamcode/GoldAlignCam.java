@@ -112,6 +112,7 @@ public class GoldAlignCam extends OpMode
 
         parameters.fillCameraMonitorViewParent = true;
 
+
         // Set camera name for Vuforia config
         parameters.cameraName = webcamName;
         parameters.vuforiaLicenseKey = VUFORIA_KEY;
@@ -119,7 +120,7 @@ public class GoldAlignCam extends OpMode
         // Create Dogeforia object
         vuforia = new Dogeforia(parameters);
         vuforia.enableConvertFrameToBitmap();
-
+        vuforia.showDebug();
 
 
         //Setup trackables
