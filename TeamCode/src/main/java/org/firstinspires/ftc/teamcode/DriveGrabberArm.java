@@ -91,6 +91,9 @@ public class DriveGrabberArm extends LinearOpMode {
         lifter.setDirection(DcMotor.Direction.FORWARD);
         grabber1.setDirection(CRServo.Direction.FORWARD);
         grabber2.setDirection(CRServo.Direction.REVERSE);
+
+        /*leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE);
+        rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);*/
         //basearm.setDirection(DcMotor.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -147,47 +150,22 @@ public class DriveGrabberArm extends LinearOpMode {
                 rightPower = (gamepad1.left_stick_y + turn) * speedChange;
             }
 
-            if (gamepad2.x) {
-                targetPositionArm = starPositionArm;
-                midarm.setTargetPosition(targetPositionArm);
-                midarm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                midarm.setPower(0.5);
-                telemetry.addData("Arm", "Moving to Rest");
-                useMidarm = FALSE;
-            } else if(gamepad2.y) {
-                targetPositionArm = starPositionArm + 240;//340
-                midarm.setTargetPosition(targetPositionArm);
-                midarm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                midarm.setPower(0.5);
-                telemetry.addData("Arm", "Moving to Drop Position");
-                useMidarm = FALSE;
-            } else if(gamepad2.b) {
-                targetPositionArm = starPositionArm + 537;//was 653
-                midarm.setTargetPosition(targetPositionArm);
-                midarm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                midarm.setPower(0.5);
-                telemetry.addData("Arm", "Moving to Pickup Postion");
-                useMidarm = FALSE;
-            }
+
             //midarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
             armSpeedChange = 1-(gamepad2.right_trigger * 0.4);
-            if(gamepad2.left_stick_y != 0) {
-                midarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                midarmPower=(0.8 * gamepad2.left_stick_y) * armSpeedChange;//*0.5
-                useMidarm = TRUE;
-            } else if(midarm.isBusy()) {
-            } else {
-                midarmPower = 0;
-                useMidarm = TRUE;
-            }
             if (gamepad2.b && gamepad2.y) {
                 lifterPower = 0.9;//for raising I commented this out untill we get the lifter
             } else if(gamepad2.x && gamepad2.a){
                 lifterPower = -0.8;//for lowering
-            } else {
+            } else if(TRUE){
                 lifterPower = 0.0;
             }
+                midarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                midarmPower=(0.8 * gamepad2.left_stick_y) * armSpeedChange;//*0.5
+
+
+
 
             if (gamepad2.right_bumper) {
                 grabberPower = 0.97;
@@ -203,17 +181,20 @@ public class DriveGrabberArm extends LinearOpMode {
 
 
 
+
+
             // Send calculated power to wheels
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
-            if(useMidarm == TRUE){
+            //if(useMidarm == TRUE){
                 midarm.setPower(midarmPower);
-            }
+            //}
             lifter.setPower(lifterPower);
             grabber1.setPower(grabberPower);
             grabber2.setPower(grabberPower);
             //basearm.setPower(basearmPower);
             // Show the elapsed game time and wheel power.
+            telemetry.addData("Lifter", "lifter" + lifterPower);
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
             telemetry.addData("MotosArm", "mid (%.2f)", midarmPower);

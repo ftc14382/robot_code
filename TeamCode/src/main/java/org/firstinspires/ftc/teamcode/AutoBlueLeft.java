@@ -132,6 +132,7 @@ public class AutoBlueLeft extends LinearOpMode {
     private static final Quad  startQuad =  Quad.BLUE_LEFT;
 
     private Position blueDepot = new Position();
+    private Position crater = new Position();
 
 
     /**
@@ -154,8 +155,11 @@ public class AutoBlueLeft extends LinearOpMode {
 
     @Override public void runOpMode() {
 
-        blueDepot.x = -48;
-        blueDepot.y = 58;
+        blueDepot.x = -56;//-48
+        blueDepot.y = 64;//58
+
+        crater.x = 45;
+        crater.y = 63;
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -292,8 +296,8 @@ public class AutoBlueLeft extends LinearOpMode {
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 206;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 114;   // eg: Camera is 200 mm above ground
+        final int CAMERA_FORWARD_DISPLACEMENT  = 201;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 101;   // eg: Camera is 200 mm above ground
         final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
@@ -320,61 +324,85 @@ public class AutoBlueLeft extends LinearOpMode {
 
         /** Start tracking the data sets we care about. */
         targetsRoverRuckus.activate();
-        while (opModeIsActive()) {
 
-            double leftPower;
-            double rightPower;
 
-            // check all the trackable target to see which one (if any) is visible.
-            targetVisible = false;
-            for (VuforiaTrackable trackable : allTrackables) {
-                if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
-                    telemetry.addData("Visible Target", trackable.getName());
-                    targetVisible = true;
+        double leftPower;
+        double rightPower;
 
-                    // getUpdatedRobotLocation() will return null if no new information is available since
-                    // the last time that call was made, or if the trackable is not currently visible.
-                    OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
-                    if (robotLocationTransform != null) {
-                        lastLocation = robotLocationTransform;
-                    }
-                    break;
+        // check all the trackable target to see which one (if any) is visible.
+        targetVisible = false;
+        for (VuforiaTrackable trackable : allTrackables) {
+            if (((VuforiaTrackableDefaultListener)trackable.getListener()).isVisible()) {
+                telemetry.addData("Visible Target", trackable.getName());
+                targetVisible = true;
+
+                // getUpdatedRobotLocation() will return null if no new information is available since
+                // the last time that call was made, or if the trackable is not currently visible.
+                OpenGLMatrix robotLocationTransform = ((VuforiaTrackableDefaultListener)trackable.getListener()).getUpdatedRobotLocation();
+                if (robotLocationTransform != null) {
+                    lastLocation = robotLocationTransform;
                 }
+                break;
             }
-
-            // Provide feedback as to where the robot is located (if we know).
-            if (targetVisible) {
-                VectorF translation; // translation of robot center
-                Orientation rotation; // rotation of robot
-                // express position (translation) of robot in inches.
-                translation = lastLocation.getTranslation();
-                telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
-                        translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-                robotInfo.x = translation.get(0) / mmPerInch;
-                robotInfo.y = translation.get(1) / mmPerInch;
-                // express the rotation of the robot in degrees.
-                rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
-                telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-                robotInfo.degrees = rotation.thirdAngle;
-            }
-            else {
-                if (startQuad == Quad.BLUE_LEFT) {
-                    robotInfo.x = -16;
-                    robotInfo.y = 36;
-                    robotInfo.degrees = 45;
-                }
-                telemetry.addData("Visible Target", "none");
-            }
-            telemetry.update();
         }
 
+        // Provide feedback as to where the robot is located (if we know).
+        if (targetVisible) {
+            VectorF translation; // translation of robot center
+            Orientation rotation; // rotation of robot
+            // express position (translation) of robot in inches.
+            translation = lastLocation.getTranslation();
+            telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
+                    translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
+            robotInfo.x = translation.get(0) / mmPerInch;
+            robotInfo.y = translation.get(1) / mmPerInch;
+            // express the rotation of the robot in degrees.
+            rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
+            robotInfo.degrees = rotation.thirdAngle;
+        }
+        else {
+            if (startQuad == Quad.BLUE_LEFT) {
+                robotInfo.x = -28;//-16
+                robotInfo.y = 39;//36
+                robotInfo.degrees = 45;
+            }
+            telemetry.addData("Visible Target", "none");
+        }
+        telemetry.update();//End Viuforia
 
+        driveTo(robotInfo, blueDepot);
+        encoderDrive(TURN_SPEED, degreesToInches(135), degreesToInches(-135), 6);
+        //deploy marker
+        driveTo(robotInfo, crater);
 
     }
 
     public double degreesToInches(double degrees) {
         double Inches = (degrees * 14.2)/COUNTS_PER_INCH;
         return Math.round(Inches);
+    }
+
+    public void driveTo(RobotInfo r, Position p) {
+        double deltaX = p.x - r.x;
+        double deltaY = p.y - r.y;
+        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        double theta = Math.atan2(deltaY, deltaX);
+        double turn = Math.toDegrees(theta) - r.degrees;
+        if (turn > 180) {
+            turn -= 360;
+        }
+        if (turn < -180) {
+            turn += 360;
+        }
+        encoderDrive(TURN_SPEED, -degreesToInches(turn), degreesToInches(turn), 5);
+        encoderDrive(DRIVE_SPEED, distance, distance, 6);
+        r.x = p.x;
+        r.y = p.y;
+        r.degrees = theta;
+        telemetry.addData("RobotX:", r.x);
+        telemetry.addData("RobotY", r.y);
+        telemetry.addData("Robot Heading", r.degrees);
     }
 
     /*

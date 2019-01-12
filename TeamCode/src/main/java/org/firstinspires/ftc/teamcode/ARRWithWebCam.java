@@ -339,6 +339,7 @@ public class ARRWithWebCam extends LinearOpMode {
 
         RobotInfo robotInfo = new RobotInfo();
 
+        sleep(2000);
         encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
             encoderDrive(DRIVE_SPEED,22,22,4.0);
