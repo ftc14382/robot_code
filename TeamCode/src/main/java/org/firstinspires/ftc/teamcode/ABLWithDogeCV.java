@@ -29,9 +29,15 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.disnodeteam.dogecv.CameraViewDisplay;
+import com.disnodeteam.dogecv.DogeCV;
+import com.disnodeteam.dogecv.Dogeforia;
+import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
@@ -54,10 +60,7 @@ import java.util.List;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
-import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.YZX;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
-import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.BACK;
-import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer.CameraDirection.FRONT;
 
 /**
  * This 2018-2019 OpMode illustrates the basics of using the Vuforia localizer to determine
@@ -97,9 +100,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * is explained below.
  */
 
-@Autonomous(name="BlueLeftWeb", group ="Competition")
+@Autonomous(name="BlueLeftCV", group ="DogeCV")
 //@Disabled
-public class ABLWithWebCam extends LinearOpMode {
+public class ABLWithDogeCV extends LinearOpMode {
 public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
 
@@ -119,6 +122,7 @@ public static final String Tag = "OurLog";
 
     // Since ImageTarget trackables use mm to specifiy their dimensions, we must use mm for all the physical dimension.
     // We will define some constants and conversions here
+
     private static final float mmPerInch        = 25.4f;
     private static final float mmFTCFieldWidth  = (12*6) * mmPerInch;       // the width of the FTC field (from the center point to the outer panels)
     private static final float mmTargetHeight   = (6) * mmPerInch;          // the height of the center of the target image above the floor
@@ -128,7 +132,8 @@ public static final String Tag = "OurLog";
     //private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
 
     private OpenGLMatrix lastLocation = null;
-    private boolean targetVisible = false;
+    private boolean targetVisible;
+    Dogeforia vuforia;
 
     private enum TurnDirection {RIGHT,LEFT}
     private enum DriveDirection {FORWARD, BACKWARD}
@@ -145,12 +150,16 @@ public static final String Tag = "OurLog";
      * {@link #vuforia} is the variable we will use to store our instance of the Vuforia
      * localization engine.
      */
-    VuforiaLocalizer vuforia;
+    //VuforiaLocalizer vuforia;
     WebcamName webcamName;
 
+    List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor leftDrive = null;
     private DcMotor rightDrive = null;
+
+    // DogeCV detector
+    GoldAlignDetector detector;
 
     static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // This is < 1.0 if geared UP
@@ -203,17 +212,22 @@ public static final String Tag = "OurLog";
          * If no camera monitor is desired, use the parameterless constructor instead (commented out below).
          */
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters(cameraMonitorViewId);
+        VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();//should this have View ID??
 
         // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
+
+        parameters.fillCameraMonitorViewParent = true;
 
         parameters.vuforiaLicenseKey = VUFORIA_KEY ;
         //parameters.cameraDirection   = CAMERA_CHOICE;
         parameters.cameraName = webcamName;
-
+// Create Dogeforia object
+        vuforia = new Dogeforia(parameters);
+        vuforia.enableConvertFrameToBitmap();
+        vuforia.showDebug();
 
         //  Instantiate the Vuforia engine
-        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+     //vuforia = ClassFactory.getInstance().createVuforia(parameters);//!!!!!!!!!!!!!!!!!!!
 
         // Load the data sets that for the trackable objects. These particular data
         // sets are stored in the 'assets' part of our application.
@@ -228,7 +242,7 @@ public static final String Tag = "OurLog";
         backSpace.setName("Back-Space");
 
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
-        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
+
         allTrackables.addAll(targetsRoverRuckus);
 
         /**
@@ -325,7 +339,7 @@ public static final String Tag = "OurLog";
         final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
 
-        OpenGLMatrix robotFromCamera = OpenGLMatrix
+        OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
                 .multiplied(Orientation.getRotationMatrix(AxesReference.EXTRINSIC, AxesOrder.XZY,AngleUnit.DEGREES,
                         90, 90, 0));
@@ -333,9 +347,28 @@ public static final String Tag = "OurLog";
         /**  Let all the trackable listeners know where the phone is.  */
         for (VuforiaTrackable trackable : allTrackables)
         {
-            ((VuforiaTrackableDefaultListener)trackable.getListener()).setCameraLocationOnRobot(parameters.cameraName, robotFromCamera);
+            ((VuforiaTrackableDefaultListener)trackable.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
         }
+// Initialize the detector
 
+        //Activate the targets
+        targetsRoverRuckus.activate();
+
+        //Initialize the detector
+        detector = new GoldAlignDetector();
+        detector.init(hardwareMap.appContext,CameraViewDisplay.getInstance(), 0, true);
+        detector.useDefaults();
+        detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
+        //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
+        detector.downscale = 0.8;
+        detector.alignPosOffset = 0;
+        detector.alignSize = 40;
+
+        // Set the detector
+        vuforia.setDogeCVDetector(detector);
+        vuforia.enableDogeCV();
+        vuforia.showDebug();
+        vuforia.start();
         /** Wait for the game to begin */
 
 
@@ -344,6 +377,9 @@ public static final String Tag = "OurLog";
         telemetry.update();
         waitForStart();
 
+
+
+        runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
         encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
@@ -387,7 +423,7 @@ public static final String Tag = "OurLog";
             VectorF translation; // translation of robot center
             Orientation rotation; // rotation of robot
             // express position (translation) of robot in inches.
-            translation = lastLocation.getTranslation();
+           translation = lastLocation.getTranslation();
             telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
                     translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
             robotInfo.x = translation.get(0) / mmPerInch;
@@ -432,6 +468,8 @@ public static final String Tag = "OurLog";
             robot.marker.setPower(0);
 
             driveTo(robotInfo, transfer);
+
+
             driveTo(robotInfo, crater);
         } else {
             driveTo(robotInfo, Depot);
@@ -445,6 +483,17 @@ public static final String Tag = "OurLog";
             robot.marker.setPower(0);
 
             driveTo(robotInfo, transfer);
+
+            telemetry.addData("Cube Found: ", detector.isFound());
+            if(detector.isFound()){
+                telemetry.addData("Cube X: ", detector.getXPosition());
+                telemetry.addData("Cube in Margin: ", detector.getAligned());
+            }
+
+
+            telemetry.update();
+            sleep(4000);
+
             driveTo(robotInfo, crater);
         }
 
