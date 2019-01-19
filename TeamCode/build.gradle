@@ -15,7 +15,9 @@ dependencies {
     implementation project(':DogeCV')
 }
 
-
+//
+// Generate opmodes for other quadrants from BL.
+//
 task genQuadsTask  {
     println "Generating sources..."
     String tcPath = "TeamCode/src/main/java/org/firstinspires/ftc/teamcode"
@@ -53,6 +55,7 @@ task genQuadsTask  {
 
 }
 
+// Make java compile task depend on our genQuads task.
 tasks.withType(JavaCompile) {
     compileTask -> compileTask.dependsOn genQuadsTask
 }
