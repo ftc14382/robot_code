@@ -14,3 +14,45 @@ dependencies {
     implementation project(':openCVLibrary3')
     implementation project(':DogeCV')
 }
+
+
+task genQuadsTask  {
+    println "Generating sources..."
+    String tcPath = "TeamCode/src/main/java/org/firstinspires/ftc/teamcode"
+    String ABLFilename = tcPath + "/ABLWithDogeCV.java"
+    String ABRFilename = tcPath + "/ABRWithDogeCV.java"
+    String ARLFilename = tcPath + "/ARLWithDogeCV.java"
+    String ARRFilename = tcPath + "/ARRWithDogeCV.java"
+
+    File inputFile = new File(ABLFilename)
+    String text = inputFile.getText('UTF-8')
+
+    // Write ABR
+    String outText = text
+    outText = outText.replace("public class ABLWithDogeCV", "public class ABRWithDogeCV")
+    outText = outText.replace("startQuad =  Quad.BLUE_LEFT", "startQuad =  Quad.BLUE_RIGHT")
+    outText = outText.replace("name=\"BlueLeftCV\"","name=\"BlueRightCV\"")
+    File outFile = new File(ABRFilename)
+    outFile.write outText
+
+    // Write ABR
+    outText = text
+    outText = outText.replace("public class ABLWithDogeCV", "public class ARLWithDogeCV")
+    outText = outText.replace("startQuad =  Quad.BLUE_LEFT", "startQuad =  Quad.RED_LEFT")
+    outText = outText.replace("name=\"BlueLeftCV\"","name=\"RedLeftCV\"")
+    outFile = new File(ARLFilename)
+    outFile.write outText
+
+    // Write ABR
+    outText = text
+    outText = outText.replace("public class ABLWithDogeCV", "public class ARRWithDogeCV")
+    outText = outText.replace("startQuad =  Quad.BLUE_LEFT", "startQuad =  Quad.RED_RIGHT")
+    outText = outText.replace("name=\"BlueLeftCV\"","name=\"RedRightCV\"")
+    outFile = new File(ARRFilename)
+    outFile.write outText
+
+}
+
+tasks.withType(JavaCompile) {
+    compileTask -> compileTask.dependsOn genQuadsTask
+}
