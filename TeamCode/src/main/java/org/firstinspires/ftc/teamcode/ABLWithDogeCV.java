@@ -62,6 +62,8 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGR
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
 
+
+
 /**
  * This 2018-2019 OpMode illustrates the basics of using the Vuforia localizer to determine
  * positioning and orientation of robot on the FTC field.
@@ -106,6 +108,7 @@ public class ABLWithDogeCV extends LinearOpMode {
 public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
 
+
     /*
      * IMPORTANT: You need to obtain your own license key to use Vuforia. The string below with which
      * 'parameters.vuforiaLicenseKey' is initialized is for illustration only, and will not function.
@@ -132,7 +135,7 @@ public static final String Tag = "OurLog";
     //private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
 
     private OpenGLMatrix lastLocation = null;
-    private boolean targetVisible;
+    boolean targetVisible;//was private
     Dogeforia vuforia;
 
     private enum TurnDirection {RIGHT,LEFT}
@@ -155,8 +158,7 @@ public static final String Tag = "OurLog";
 
     List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftDrive = null;
-    private DcMotor rightDrive = null;
+
 
     // DogeCV detector
     GoldAlignDetector detector;
@@ -214,6 +216,7 @@ public static final String Tag = "OurLog";
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();//should this have View ID??
 
+
         // VuforiaLocalizer.Parameters parameters = new VuforiaLocalizer.Parameters();
 
         parameters.fillCameraMonitorViewParent = true;
@@ -225,6 +228,7 @@ public static final String Tag = "OurLog";
         vuforia = new Dogeforia(parameters);
         vuforia.enableConvertFrameToBitmap();
         vuforia.showDebug();
+
 
         //  Instantiate the Vuforia engine
      //vuforia = ClassFactory.getInstance().createVuforia(parameters);//!!!!!!!!!!!!!!!!!!!
@@ -241,9 +245,13 @@ public static final String Tag = "OurLog";
         VuforiaTrackable backSpace = targetsRoverRuckus.get(3);
         backSpace.setName("Back-Space");
 
-        // For convenience, gather together all the trackable objects in one easily-iterable collection */
 
+
+        // For convenience, gather together all the trackable objects in one easily-iterable collection */
+        List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
         allTrackables.addAll(targetsRoverRuckus);
+
+
 
         /**
          * In order for localization to work, we need to tell the system where each target is on the field, and
@@ -334,9 +342,9 @@ public static final String Tag = "OurLog";
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 229;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 152;   // eg: Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
+        final int CAMERA_FORWARD_DISPLACEMENT  = 226;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 178;   // eg: Camera is 200 mm above ground
+        final int CAMERA_LEFT_DISPLACEMENT     = 33;     // eg: Camera is ON the robot's center line
 
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
@@ -347,12 +355,16 @@ public static final String Tag = "OurLog";
         /**  Let all the trackable listeners know where the phone is.  */
         for (VuforiaTrackable trackable : allTrackables)
         {
-            ((VuforiaTrackableDefaultListener)trackable.getListener()).setPhoneInformation(phoneLocationOnRobot, parameters.cameraDirection);
+            ((VuforiaTrackableDefaultListener)trackable.getListener()).setCameraLocationOnRobot(parameters.cameraName, phoneLocationOnRobot);
         }
+
+
+
 // Initialize the detector
 
         //Activate the targets
         targetsRoverRuckus.activate();
+
 
         //Initialize the detector
         detector = new GoldAlignDetector();
@@ -361,8 +373,9 @@ public static final String Tag = "OurLog";
         detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
-        detector.alignPosOffset = 0;
+        detector.alignPosOffset = 40;
         detector.alignSize = 40;
+
 
         // Set the detector
         vuforia.setDogeCVDetector(detector);
@@ -379,10 +392,40 @@ public static final String Tag = "OurLog";
 
 
 
+
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
-        encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
+        //double startLeft = robot.leftDrive.getCurrentPosition();
+        while(runtime.seconds()<10) {
+            telemetry.addData("Cube Found: ", detector.isFound());
+            telemetry.addData("Cube X: ", detector.getXPosition());
+            telemetry.update();
+            if(detector.isFound()) {
+                if (detector.getAligned()) {
+                    sleep(3);
+                    if(detector.getAligned()) {
+                        //robotInfo.degrees += (startLeft - robot.leftDrive.getCurrentPosition())/11.2;
+                        break;
+                    }
+                } else if (detector.getXPosition() > 320) {
+                    robot.leftDrive.setPower(0.09);
+                    robot.rightDrive.setPower(-0.09);
+                } else {
+                    robot.rightDrive.setPower(0.09);
+                    robot.leftDrive.setPower(-0.09);
+                }
+            } else {
+                encoderDrive(TURN_SPEED, 1, -1, 2);
+                if(detector.isFound() == false) {
+                    encoderDrive(TURN_SPEED, -2, 2, 4);
+                }
+            }
+        }
+
+        encoderDrive(TURN_SPEED, 8, 8, 5);
+
+        /*encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
             encoderDrive(DRIVE_SPEED,22,22,4.0);
             encoderDrive(TURN_SPEED, degreesToInches(75),degreesToInches(-75),2.0);  //Trying to turn
@@ -391,13 +434,13 @@ public static final String Tag = "OurLog";
             encoderDrive(DRIVE_SPEED,24,24,4.0);
             encoderDrive(TURN_SPEED, degreesToInches(-75),degreesToInches(75),2.0);  //Trying to turn
             encoderDrive(DRIVE_SPEED,12,12,5.0);
-        }
+        }*/
 
         /** Start tracking the data sets we care about. */
         targetsRoverRuckus.activate();
 
 
-        double leftPower;
+       /* double leftPower;
         double rightPower;
         sleep(1000);
         // check all the trackable target to see which one (if any) is visible.
@@ -483,19 +526,8 @@ public static final String Tag = "OurLog";
             robot.marker.setPower(0);
 
             driveTo(robotInfo, transfer);
-
-            telemetry.addData("Cube Found: ", detector.isFound());
-            if(detector.isFound()){
-                telemetry.addData("Cube X: ", detector.getXPosition());
-                telemetry.addData("Cube in Margin: ", detector.getAligned());
-            }
-
-
-            telemetry.update();
-            sleep(4000);
-
             driveTo(robotInfo, crater);
-        }
+        }*/
 
 
     }
@@ -544,6 +576,11 @@ public static final String Tag = "OurLog";
         // Ensure that the opmode is still active
         if (opModeIsActive()) {
 
+            if(leftInches != rightInches) {
+                robot.leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE);//set brake mode
+                robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            }
+
             // Determine new target position, and pass to motor controller
             newLeftTarget = robot.leftDrive.getCurrentPosition() + (int)(leftInches * COUNTS_PER_INCH);
             newRightTarget = robot.rightDrive.getCurrentPosition() + (int)(rightInches * COUNTS_PER_INCH);
@@ -584,6 +621,11 @@ public static final String Tag = "OurLog";
             // Turn off RUN_TO_POSITION
             robot.leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             robot.rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+            if(leftInches != rightInches) {
+                robot.leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.FLOAT);//set brake mode
+                robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            }
 
             //  sleep(250);   // optional pause after each move
         }
