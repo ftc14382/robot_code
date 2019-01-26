@@ -403,27 +403,34 @@ public static final String Tag = "OurLog";
             telemetry.update();
             if(detector.isFound()) {
                 if (detector.getAligned()) {
-                    sleep(3);
+                    sleep(130);
                     if(detector.getAligned()) {
                         //robotInfo.degrees += (startLeft - robot.leftDrive.getCurrentPosition())/11.2;
                         break;
+                    } else if(detector.getXPosition() > 360) {
+                        robot.leftDrive.setPower(0.03);
+                        robot.rightDrive.setPower(-0.03);
+                    } else {
+                        robot.rightDrive.setPower(0.03);
+                        robot.leftDrive.setPower(-0.03);
                     }
-                } else if (detector.getXPosition() > 320) {
-                    robot.leftDrive.setPower(0.09);
-                    robot.rightDrive.setPower(-0.09);
+                } else if (detector.getXPosition() > 360) {
+                    robot.leftDrive.setPower(0.08);
+                    robot.rightDrive.setPower(-0.08);
                 } else {
-                    robot.rightDrive.setPower(0.09);
-                    robot.leftDrive.setPower(-0.09);
+                    robot.rightDrive.setPower(0.08);
+                    robot.leftDrive.setPower(-0.08);
                 }
             } else {
-                encoderDrive(TURN_SPEED, 1, -1, 2);
+                encoderDrive(TURN_SPEED, 1.2, -1.2, 4);
                 if(detector.isFound() == false) {
-                    encoderDrive(TURN_SPEED, -2, 2, 4);
+                    encoderDrive(TURN_SPEED, 1.2, -1.2, 4);
+                    encoderDrive(TURN_SPEED, 1.2, -1.2, 4);
                 }
             }
         }
 
-        encoderDrive(TURN_SPEED, 8, 8, 5);
+        encoderDrive(TURN_SPEED, 20, 20, 5);
 
         /*encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
