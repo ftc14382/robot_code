@@ -57,6 +57,7 @@ public class HardwarePushbot
     public DcMotor  leftDrive   = null;
     public DcMotor  rightDrive  = null;
     public CRServo marker = null;
+    public DcMotor extender = null;
     public DcMotor lifter = null;
     //public DcMotor  leftArm     = null;
     //public Servo    leftClaw    = null;
@@ -85,18 +86,21 @@ public class HardwarePushbot
         rightDrive = hwMap.get(DcMotor.class, "right_drive");
         marker = hwMap.get(CRServo.class, "marker");
         //leftArm    = hwMap.get(DcMotor.class, "left_arm");
+        extender = hwMap.get(DcMotor.class, "lifter2");
         lifter = hwMap.get(DcMotor.class, "lifter");
 
 
         leftDrive.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
         rightDrive.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        marker.setDirection(CRServo.Direction.FORWARD);
+        //marker.setDirection(CRServo.Direction.FORWARD);
+        extender.setDirection(DcMotor.Direction.FORWARD);
         lifter.setDirection(DcMotor.Direction.FORWARD);
 
         // Set all motors to zero power
         leftDrive.setPower(0.0);
         rightDrive.setPower(0);
         marker.setPower(0);
+        extender.setPower(0);
         lifter.setPower(0);
         //leftArm.setPower(0);
 
@@ -105,12 +109,16 @@ public class HardwarePushbot
         leftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         //leftArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        extender.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Define and initialize ALL installed servos.
         //leftClaw  = hwMap.get(Servo.class, "left_hand");
         //rightClaw = hwMap.get(Servo.class, "right_hand");
         //leftClaw.setPosition(MID_SERVO);
         //rightClaw.setPosition(MID_SERVO);
+
+        leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.FLOAT);//set brake mode
+        rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
  }
 
