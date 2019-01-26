@@ -146,6 +146,8 @@ public static final String Tag = "OurLog";
     private Position cube1 = new Position();
     private Position cube2 = new Position();
     private Position cube3 = new Position();
+    private Position cube1Found = new Position();
+    private Position cube3Found = new Position();
 
 
     /**
@@ -195,12 +197,16 @@ public static final String Tag = "OurLog";
 
         cube1.x = -25.5;
         cube1.y = 45.5;
+        cube1Found.x = -27;
+        cube1Found.y = 50;
 
         cube2.x = -35.5;
         cube2.y = 35.5;
 
         cube3.x = -45.5;
         cube3.y = 25.5;
+        cube3Found.x = -50;
+        cube3Found.y = 30;
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -515,17 +521,19 @@ public static final String Tag = "OurLog";
         telemetry.update();//End Viuforia
         //sleep(10000);
         turnTo(robotInfo, cube1);
-        sleep(1000);
+        sleep(3000);
         if(detector.getAligned()) {
             driveTo(robotInfo, cube1);
+            driveTo(robotInfo, cube1Found);
         } else {
             turnTo(robotInfo, cube2);
-            sleep(1000);
+            sleep(8000);
             if(detector.getAligned()) {
                 driveTo(robotInfo, cube2);
             } else {
-                turnTo(robotInfo, cube3);
+                //turnTo(robotInfo, cube3);
                 driveTo(robotInfo, cube3);
+                driveTo(robotInfo, cube3Found);
             }
         }
 
