@@ -149,7 +149,7 @@ public static final String Tag = "OurLog";
     private Position cube1Found = new Position();
     private Position cube3Found = new Position();
 
-    int StartPosition = robot.extender.getCurrentPosition();
+
 
 
     /**
@@ -174,8 +174,13 @@ public static final String Tag = "OurLog";
     static final double     DRIVE_SPEED             = 0.6;
     static final double     TURN_SPEED              = 0.3;//was 0.4
 
+    int StartPosition;
+
+
+
     @Override public void runOpMode() {
         webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
+
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
             Depot.x = -55;//-47
@@ -417,32 +422,48 @@ public static final String Tag = "OurLog";
 
 
 
+        StartPosition = robot.extender.getCurrentPosition();
+
+
         telemetry.addData(">", "Press Play to start tracking");
         telemetry.update();
         waitForStart();
-
-
 
 
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
 
-        /*robot.lifter.setPower(0.9);
-        sleep(900);
-        robot.lifter.setPower(0.05);
+
+        robot.lifter.setPower(0.95);
+        robot.extender.setPower(-0.03);
         sleep(1000);
-        robot.lifter.setPower(0);*/
+        robot.lifter.setPower(0.05);
+        robot.extender.setPower(0);
+        sleep(1000);
+        robot.lifter.setPower(0);
 
-        raiseTo(-50);
-        /*encoderDrive(DRIVE_SPEED, 2, 2, 1);
-        encoderDrive(DRIVE_SPEED, -2, -2, 1);
+        raiseTo(-416);
+        encoderDrive(DRIVE_SPEED, 3, 3, 1);
+        encoderDrive(DRIVE_SPEED, -3, -3, 1);
         raiseTo(-453);
-        */
+        encoderDrive(DRIVE_SPEED, 4, 4, 2);
+        encoderDrive(TURN_SPEED, -3, 4, 3);
+        raiseTo(-482);
+        encoderDrive(TURN_SPEED, -3, 3, 2);
+        encoderDrive(DRIVE_SPEED, 3, 3, 2);
+        encoderDrive(TURN_SPEED, -4, 4, 2);
+        encoderDrive(DRIVE_SPEED, 3, 3, 2);
+        encoderDrive(TURN_SPEED, degreesToInches(-90), degreesToInches(90), 4);
+        encoderDrive(DRIVE_SPEED, 5, 5, 4);
 
 
 
-        encoderDrive(TURN_SPEED, degreesToInches(80), degreesToInches(-80), 8);
+
+
+        //encoderDrive(TURN_SPEED, degreesToInches(80), degreesToInches(-80), 8);
+
+
         /*while(runtime.seconds()<10) {
             telemetry.addData("Cube Found: ", detector.isFound());
             telemetry.addData("Cube X: ", detector.getXPosition());
@@ -551,7 +572,7 @@ public static final String Tag = "OurLog";
         }
         telemetry.update();//End Viuforia
         //sleep(10000);
-        turnTo(robotInfo, cube1);
+        /*turnTo(robotInfo, cube1);
         sleep(2000);
         if(detector.getAligned()) {
             driveTo(robotInfo, cube1, true);
@@ -570,7 +591,7 @@ public static final String Tag = "OurLog";
 
         driveTo(robotInfo, Depot, true);
         driveTo(robotInfo, transfer, true);
-        driveTo(robotInfo, crater, false);
+        driveTo(robotInfo, crater, false);*/
 
 
 
@@ -673,6 +694,8 @@ public static final String Tag = "OurLog";
         while(robot.extender.isBusy()) {
             telemetry.addData("Extender", "Running to %d", position);
             telemetry.update();
+
+
         }
         robot.extender.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
