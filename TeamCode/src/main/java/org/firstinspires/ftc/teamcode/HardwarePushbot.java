@@ -59,6 +59,7 @@ public class HardwarePushbot
     public CRServo marker = null;
     public DcMotor extender = null;
     public DcMotor lifter = null;
+    public CRServo arm = null;
     //public DcMotor  leftArm     = null;
     //public Servo    leftClaw    = null;
     //public Servo    rightClaw   = null;
@@ -88,13 +89,15 @@ public class HardwarePushbot
         //leftArm    = hwMap.get(DcMotor.class, "left_arm");
         extender = hwMap.get(DcMotor.class, "lifter2");
         lifter = hwMap.get(DcMotor.class, "lifter");
+        arm = hwMap.get(CRServo.class, "arm");
 
 
         leftDrive.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
         rightDrive.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        //marker.setDirection(CRServo.Direction.FORWARD);
+        marker.setDirection(CRServo.Direction.FORWARD);
         extender.setDirection(DcMotor.Direction.FORWARD);
         lifter.setDirection(DcMotor.Direction.FORWARD);
+        arm.setDirection(CRServo.Direction.FORWARD);
 
         // Set all motors to zero power
         leftDrive.setPower(0.0);
@@ -102,6 +105,7 @@ public class HardwarePushbot
         marker.setPower(0);
         extender.setPower(0);
         lifter.setPower(0);
+        arm.setPower(0);
         //leftArm.setPower(0);
 
         // Set all motors to run without encoders.
