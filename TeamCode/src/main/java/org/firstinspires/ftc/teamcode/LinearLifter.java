@@ -65,6 +65,9 @@ public class LinearLifter extends LinearOpMode {
     private DcMotor colapser = null;
     private DcMotor extender2 = null;
     private CRServo extender = null;
+    private CRServo arm = null;
+    private CRServo marker = null;
+
     /*private CRServo grabber1 = null;
     private CRServo grabber2 = null;*/
     //private DcMotor basearm = null;
@@ -83,6 +86,8 @@ public class LinearLifter extends LinearOpMode {
         colapser = hardwareMap.get(DcMotor.class, "lifter");
         extender2 = hardwareMap.get(DcMotor.class, "lifter2");
         extender = hardwareMap.get(CRServo.class, "lifter_extender");
+        arm = hardwareMap.get(CRServo.class, "arm");
+        marker = hardwareMap.get(CRServo.class, "marker");
         /*grabber1 = hardwareMap.get(CRServo.class,  "grabber1");
         grabber2 = hardwareMap.get(CRServo.class,  "grabber2");*/
         //basearm = hardwareMap.get(DcMotor.class, "base_arm");
@@ -96,6 +101,8 @@ public class LinearLifter extends LinearOpMode {
         colapser.setDirection(DcMotor.Direction.FORWARD);
         extender2.setDirection(DcMotor.Direction.FORWARD);
         extender.setDirection(CRServo.Direction.FORWARD);
+        arm.setDirection(CRServo.Direction.FORWARD);
+        marker.setDirection(CRServo.Direction.FORWARD);
         /*grabber1.setDirection(CRServo.Direction.FORWARD);
         grabber2.setDirection(CRServo.Direction.REVERSE);*/
 
@@ -115,6 +122,10 @@ public class LinearLifter extends LinearOpMode {
         //double midarmPower = 0;
         double colapsePower = 0;
         double extendPower = 0;
+        double armPower = 0;
+        double markerPower = 0;
+        int startPosition = extender2.getCurrentPosition();
+
 
         //double grabberPower;
         //int starPositionArm = midarm.getCurrentPosition();
@@ -188,6 +199,20 @@ public class LinearLifter extends LinearOpMode {
             } else if(gamepad2.left_bumper){
                 colapsePower = gamepad2.right_stick_y;
                 extendPower = gamepad2.left_stick_y;
+            } else {
+                colapsePower = 0;
+                extendPower = 0;
+            }
+
+            if(gamepad2.left_bumper == false) {
+                armPower = gamepad2.left_stick_y * armSpeedChange;
+            }
+            armPower = 0;
+
+            if(gamepad2.dpad_up) {
+                markerPower = -0.6 * armSpeedChange;
+            } else if(gamepad2.dpad_down) {
+                markerPower = 0.6 * armSpeedChange;
             }
 
 
@@ -220,6 +245,8 @@ public class LinearLifter extends LinearOpMode {
             colapser.setPower(colapsePower);
             extender.setPower(extendPower);
             extender2.setPower(extendPower);
+            arm.setPower(armPower);
+            marker.setPower(markerPower);
             /*grabber1.setPower(grabberPower);
             grabber2.setPower(grabberPower);*/
             //basearm.setPower(basearmPower);
@@ -227,6 +254,9 @@ public class LinearLifter extends LinearOpMode {
             telemetry.addData("Lifter", "lifter" + colapsePower);
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
+            telemetry.addData("Arm", "power (%.2f)", armPower);
+            telemetry.addData("Extender", "Position (%d)", startPosition - extender2.getCurrentPosition());
+            telemetry.addData("Marker", "power (%.2f)", markerPower);
             //telemetry.addData("MotosArm", "mid (%.2f)", midarmPower);
             //telemetry.addData("Grabber Power", "mid (%.2f)", grabberPower);
             telemetry.addData("Drive", "Change: (%.2f)", speedChange);
