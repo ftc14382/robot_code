@@ -34,14 +34,15 @@ import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.RobotLog;
 
-import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.Func;
+import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
@@ -54,14 +55,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import org.firstinspires.ftc.robotcore.external.navigation.Velocity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
-
 
 
 /**
@@ -102,7 +104,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
  * is explained below.
  */
 
-@Autonomous(name="BlueLeftCV", group ="DogeCV")
+@Autonomous(name="BlueLeftCV", group ="NewDogeCV")
 //@Disabled
 public class ABLWithDogeCV extends LinearOpMode {
 public static final String Tag = "OurLog";
@@ -130,6 +132,15 @@ public static final String Tag = "OurLog";
     private static final float mmFTCFieldWidth  = (12*6) * mmPerInch;       // the width of the FTC field (from the center point to the outer panels)
     private static final float mmTargetHeight   = (6) * mmPerInch;          // the height of the center of the target image above the floor
 
+    // The IMU sensor object
+    BNO055IMU imu;
+
+    // State used for updating telemetry
+    Orientation angles;
+    Acceleration gravity;
+
+
+
     // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
     // Valid choices are:  BACK or FRONT
     //private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
@@ -147,6 +158,15 @@ public static final String Tag = "OurLog";
     private Position Depot = new Position();
     private Position crater = new Position();
     private Position transfer = new Position();
+    private Position depoTransfer = new Position();
+    private Position cube1 = new Position();
+    private Position cube2 = new Position();
+    private Position cube3 = new Position();
+    private Position cube1Found = new Position();
+    private Position cube3Found = new Position();
+    private Position cornerDepo = new Position();
+
+
 
 
     /**
@@ -171,28 +191,107 @@ public static final String Tag = "OurLog";
     static final double     DRIVE_SPEED             = 0.6;
     static final double     TURN_SPEED              = 0.3;//was 0.4
 
+    int StartPosition;
+
+double startIMUAngle;
+double currentIMUAngle;
+
     @Override public void runOpMode() {
         webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
+
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
-            Depot.x = -47;//-48//-56
-            Depot.y = 56;//58//64
+            Depot.x = -54.5;//-47//-55
+            Depot.y = 51;//58//64//56
 
-            transfer.x = 0;
-            transfer.y = 60;
+            transfer.x = -9;//0
+            transfer.y = 61;//62
 
-            crater.x = 46;
-            crater.y = 52.5;
+            depoTransfer.x = -30;
+            depoTransfer.y = 58;
+
+            crater.x = 13.5;//46//24
+            crater.y = 64;//52.5//55
+
+            cornerDepo.x = -72;
+            cornerDepo.y = 72;
+
+            if(startQuad == Quad.BLUE_LEFT) {
+                cube1.x = -24.5;//25.5
+                cube1.y = 46.5;//45.5
+                cube1Found.x = -27;
+                cube1Found.y = 54;
+
+                cube2.x = -35.5;//-34.5
+                cube2.y = 35.5;
+
+                cube3.x = -45.5;//-45.5
+                cube3.y = 25.5;
+                cube3Found.x = -55;
+                cube3Found.y = 30;
+            } else {
+
+                cube1.x = 24.5;//25.5
+                cube1.y = 46.5;//45.5
+                cube1Found.x = 27;
+                cube1Found.y = 54;
+
+                cube2.x = 35.5;//-34.5
+                cube2.y = 35.5;
+
+                cube3.x = 45.5;//-45.5
+                cube3.y = 25.5;
+                cube3Found.x = 55;
+                cube3Found.y = 30;
+            }
         } else {
-            Depot.x = 47;//-48//-56
-            Depot.y = -55;//58//64
+            Depot.x = 54.5;//47//55
+            Depot.y = -51;//58//64//55
 
-            transfer.x = 0;
-            transfer.y = -60;
+            transfer.x = 9;//0
+            transfer.y = -61;//63
 
-            crater.x = -46;
-            crater.y = -52.5;
+            depoTransfer.x = 30;
+            depoTransfer.y = -58;
+
+            crater.x = -13.5;//24
+            crater.y = -64;//52.5//61
+
+            cornerDepo.x = 72;
+            cornerDepo.y = -72;
+
+
+            if(startQuad == Quad.RED_LEFT) {
+                cube1.x = 24.5;//25.5
+                cube1.y = -46.5;//45.5
+                cube1Found.x = 27;
+                cube1Found.y = -54;
+
+                cube2.x = 35.5;//-34.5
+                cube2.y = -35.5;
+
+                cube3.x = 45.5;//-45.5
+                cube3.y = -25.5;
+                cube3Found.x = 55;
+                cube3Found.y = -30;
+            } else {
+
+                cube1.x = -24.5;//25.5
+                cube1.y = -46.5;//45.5
+                cube1Found.x = -27;
+                cube1Found.y = -54;
+
+                cube2.x = -35.5;//-34.5
+                cube2.y = -35.5;
+
+                cube3.x = -45.5;//-45.5
+                cube3.y = -25.5;
+                cube3Found.x = -55;
+                cube3Found.y = -30;
+            }
         }
+
+
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -228,6 +327,20 @@ public static final String Tag = "OurLog";
         vuforia = new Dogeforia(parameters);
         vuforia.enableConvertFrameToBitmap();
         vuforia.showDebug();
+
+
+        // Set up the parameters with which we will use our IMU. Note that integration
+        // algorithm here just reports accelerations to the logcat log; it doesn't actually
+        // provide positional information.
+        BNO055IMU.Parameters parameters2 = new BNO055IMU.Parameters();
+        parameters2.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters2.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters2.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters2.loggingEnabled      = true;
+        parameters2.loggingTag          = "IMU";
+        parameters2.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+
+
 
 
         //  Instantiate the Vuforia engine
@@ -358,6 +471,14 @@ public static final String Tag = "OurLog";
             ((VuforiaTrackableDefaultListener)trackable.getListener()).setCameraLocationOnRobot(parameters.cameraName, phoneLocationOnRobot);
         }
 
+// Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters2);
+        telemetry.addData("IMU", "angle (%f)", getIMUAngle());
+
+
 
 
 // Initialize the detector
@@ -373,8 +494,8 @@ public static final String Tag = "OurLog";
         detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
-        detector.alignPosOffset = 40;
-        detector.alignSize = 40;
+        detector.alignPosOffset = 0;
+        detector.alignSize = 200;
 
 
         // Set the detector
@@ -385,19 +506,56 @@ public static final String Tag = "OurLog";
         /** Wait for the game to begin */
 
 
+        startIMUAngle = getIMUAngle();
+
+        StartPosition = robot.extender.getCurrentPosition();
+
 
         telemetry.addData(">", "Press Play to start tracking");
         telemetry.update();
         waitForStart();
 
 
-
-
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
-        //double startLeft = robot.leftDrive.getCurrentPosition();
-        while(runtime.seconds()<10) {
+
+
+        robot.lifter.setPower(0.95);
+        robot.extender.setPower(-0.03);
+        sleep(900);
+        robot.lifter.setPower(0.05);
+        robot.extender.setPower(0);
+        sleep(1000);
+        robot.lifter.setPower(0);
+
+        raiseTo(-416);
+        encoderDrive(DRIVE_SPEED, 3, 3, 1);
+        encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
+        raiseTo(-482);//453
+        encoderDrive(DRIVE_SPEED, 4, 4, 2);
+        encoderDrive(TURN_SPEED, -3, 4, 3);
+        //raiseTo(-482);
+        encoderDrive(TURN_SPEED, -3, 3, 2);
+        encoderDrive(DRIVE_SPEED, 3, 3, 2);
+        encoderDrive(TURN_SPEED, -4, 4, 2);
+        encoderDrive(DRIVE_SPEED, 3, 3, 2);
+        encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
+        encoderDrive(DRIVE_SPEED, 8, 8, 4);//was 7 inches
+
+
+
+
+        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+            currentIMUAngle = getIMUAngle() - startIMUAngle;
+            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-15), degreesToInches(-(currentIMUAngle-15)), 8);//was 155
+        } else {
+            //encoderDrive(TURN_SPEED, degreesToInches());
+        }
+
+
+
+        /*while(runtime.seconds()<10) {
             telemetry.addData("Cube Found: ", detector.isFound());
             telemetry.addData("Cube X: ", detector.getXPosition());
             telemetry.update();
@@ -428,11 +586,11 @@ public static final String Tag = "OurLog";
                     encoderDrive(TURN_SPEED, 1.2, -1.2, 4);
                 }
             }
-        }
+        }*/
 
-        encoderDrive(TURN_SPEED, 20, 20, 5);
+        /*encoderDrive(TURN_SPEED, 20, 20, 5);
 
-        /*encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
+        encoderDrive(TURN_SPEED, degreesToInches(-170), degreesToInches(170), 5);
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
             encoderDrive(DRIVE_SPEED,22,22,4.0);
             encoderDrive(TURN_SPEED, degreesToInches(75),degreesToInches(-75),2.0);  //Trying to turn
@@ -447,9 +605,9 @@ public static final String Tag = "OurLog";
         targetsRoverRuckus.activate();
 
 
-       /* double leftPower;
+        double leftPower;
         double rightPower;
-        sleep(1000);
+        sleep(1300);
         // check all the trackable target to see which one (if any) is visible.
         targetVisible = false;
         for (VuforiaTrackable trackable : allTrackables) {
@@ -480,6 +638,7 @@ public static final String Tag = "OurLog";
             robotInfo.y = translation.get(1) / mmPerInch;
             // express the rotation of the robot in degrees.
             rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            RobotLog.ii(Tag, "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             robotInfo.degrees = rotation.thirdAngle;
         }
@@ -502,11 +661,52 @@ public static final String Tag = "OurLog";
                 robotInfo.degrees = 120;
             }
             telemetry.addData("Visible Target", "none");
+            RobotLog.ii(Tag, "Target NOT Visible");
         }
+        vuforia.disableTrack();
         telemetry.update();//End Viuforia
         //sleep(10000);
+        turnTo(robotInfo, cube1);
+        sleep(1500);//2000
+        if(detector.getAligned()) {
+            driveTo(robotInfo, cube1, true);
+            if (startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
+            driveTo(robotInfo, cube1Found, true);
+            }
+        } else {
+            turnTo(robotInfo, cube2);
+            sleep(1500);
+            if(detector.getAligned()) {
+                driveTo(robotInfo, cube2, true);
+            } else {
+                //turnTo(robotInfo, cube3);
+                driveTo(robotInfo, cube3, true);
+                if (startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
+                    driveTo(robotInfo, cube3Found, true);
+                }
+            }
+        }
 
-        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+        if(startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
+            driveTo(robotInfo, Depot, true);
+            turnTo(robotInfo, cornerDepo);
+            robot.marker.setPower(-1);//0.9
+            sleep(600);//915
+            robot.marker.setPower(1);
+            sleep(530);
+            robot.marker.setPower(0);
+            driveTo(robotInfo, depoTransfer, true);
+            driveTo(robotInfo, transfer, true);
+            driveTo(robotInfo, crater, false);
+        }
+
+        robot.arm.setPower(0.9);
+        sleep(1500);
+        robot.arm.setPower(0);
+
+
+
+        /*if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
             driveTo(robotInfo, Depot);
             encoderDrive(TURN_SPEED, degreesToInches(190), degreesToInches(-190), 6);
             robotInfo.degrees = robotInfo.degrees - 190;
@@ -539,12 +739,11 @@ public static final String Tag = "OurLog";
 
     }
 
-    public double degreesToInches(double degrees) {
-        double Inches = (degrees * 11.2)/COUNTS_PER_INCH;
-        return Math.round(Inches);
-    }
 
-    public void driveTo(RobotInfo r, Position p) {
+    public void turnTo(RobotInfo r, Position p) {
+        robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         double deltaX = p.x - r.x;
         double deltaY = p.y - r.y;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -556,14 +755,70 @@ public static final String Tag = "OurLog";
         if (turn < -180) {
             turn += 360;
         }
+        encoderDrive(0.2, -degreesToInches(turn), degreesToInches(turn), 5);
+        r.degrees = Math.toDegrees(theta);
+        telemetry.addData("Robot Heading", r.degrees);
+
+        robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+    }
+
+    public double getIMUAngle() {
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+    }
+
+    public double degreesToInches(double degrees) {
+        double Inches = (degrees * 11.2)/COUNTS_PER_INCH;
+        return Math.round(Inches);
+    }
+
+    public void driveTo(RobotInfo r, Position p, boolean brake) {
+        double deltaX = p.x - r.x;
+        double deltaY = p.y - r.y;
+        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        double theta = Math.atan2(deltaY, deltaX);
+        double turn = Math.toDegrees(theta) - r.degrees;
+        if (turn > 180) {
+            turn -= 360;
+        }
+        if (turn < -180) {
+            turn += 360;
+        }
+        if(brake = true) {
+            robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+
+
         encoderDrive(TURN_SPEED, -degreesToInches(turn), degreesToInches(turn), 5);
         encoderDrive(DRIVE_SPEED, distance, distance, 6);
+
+        if(brake = true) {
+            robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
+
         r.x = p.x;
         r.y = p.y;
         r.degrees = Math.toDegrees(theta);
         telemetry.addData("RobotX:", r.x);
         telemetry.addData("RobotY", r.y);
         telemetry.addData("Robot Heading", r.degrees);
+    }
+
+    public void raiseTo(int position) {
+        int newTarget = StartPosition - position;
+        robot.extender.setTargetPosition(newTarget);
+        robot.extender.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.extender.setPower(0.85);
+        while(robot.extender.isBusy()) {
+            telemetry.addData("Extender", "Running to %d", position);
+            telemetry.update();
+
+
+        }
+        robot.extender.setPower(0);
+        robot.extender.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*
