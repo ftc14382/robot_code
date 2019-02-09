@@ -29,9 +29,11 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -60,6 +62,12 @@ public class HardwarePushbot
     public DcMotor extender = null;
     public DcMotor lifter = null;
     public CRServo arm = null;
+
+
+    public DistanceSensor sensorFront;//set up distance sensor
+    public DistanceSensor sensorFrontLeft;
+    public DistanceSensor sensorBackLeft;
+
     //public DcMotor  leftArm     = null;
     //public Servo    leftClaw    = null;
     //public Servo    rightClaw   = null;
@@ -90,6 +98,17 @@ public class HardwarePushbot
         extender = hwMap.get(DcMotor.class, "lifter2");
         lifter = hwMap.get(DcMotor.class, "lifter");
         arm = hwMap.get(CRServo.class, "arm");
+
+
+        sensorFront = hwMap.get(DistanceSensor.class, "sensor_front");
+        sensorFrontLeft = hwMap.get(DistanceSensor.class, "sensor_FL");
+        sensorBackLeft = hwMap.get(DistanceSensor.class, "sensor_BL");
+        // you can also cast this to a Rev2mDistanceSensor if you want to use added
+        // methods associated with the Rev2mDistanceSensor class.
+        Rev2mDistanceSensor sensorTimeOfFlightF = (Rev2mDistanceSensor)sensorFront;
+        Rev2mDistanceSensor sensorTimeOfFlightFL = (Rev2mDistanceSensor)sensorFrontLeft;
+        Rev2mDistanceSensor sensorTimeOfFlightBL = (Rev2mDistanceSensor)sensorBackLeft;
+
 
 
         leftDrive.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
