@@ -35,6 +35,7 @@ import com.disnodeteam.dogecv.Dogeforia;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -54,10 +55,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
@@ -106,6 +109,8 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
 public class ABLWithDogeCV extends LinearOpMode {
 public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
+
+
 
 
     /*
@@ -192,28 +197,31 @@ public static final String Tag = "OurLog";
 
 double startIMUAngle;
 double currentIMUAngle;
+double startIMUOfset;
 
     @Override public void runOpMode() {
         webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
 
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
-            Depot.x = -54.5;//-47//-55
-            Depot.y = 51;//58//64//56
+            Depot.x = -54;//-47//-55
+            Depot.y = 48;//58//64//56
 
-            transfer.x = -9;//0
-            transfer.y = 61;//62
+            transfer.x = -24;//what it was:-9//13
+            transfer.y = 56;//what it was:61//60
 
-            depoTransfer.x = -30;
-            depoTransfer.y = 58;
+            depoTransfer.x = -46;//what it was:-30//35
+            depoTransfer.y = 53;//it was 58
 
             crater.x = 13.5;//46//24
-            crater.y = 64;//52.5//55
+            crater.y = 58;//52.5//55//it was 61.5
 
-            cornerDepo.x = -72;
-            cornerDepo.y = 72;
+
 
             if(startQuad == Quad.BLUE_LEFT) {
+                cornerDepo.x = -70;
+                cornerDepo.y = 72;
+
                 cube1.x = -24.5;//25.5
                 cube1.y = 46.5;//45.5
                 cube1Found.x = -27;
@@ -227,6 +235,8 @@ double currentIMUAngle;
                 cube3Found.x = -55;
                 cube3Found.y = 30;
             } else {
+                cornerDepo.x = 72;
+                cornerDepo.y = 72;
 
                 cube1.x = 24.5;//25.5
                 cube1.y = 46.5;//45.5
@@ -242,23 +252,26 @@ double currentIMUAngle;
                 cube3Found.y = 30;
             }
         } else {
-            Depot.x = 54.5;//47//55
-            Depot.y = -51;//58//64//55
+            Depot.x =54;//-47//-55
+            Depot.y = -48;//58//64//56
 
-            transfer.x = 9;//0
-            transfer.y = -61;//63
+            transfer.x = 23;//what it was:-9
+            transfer.y = -58;//what it was:61
 
-            depoTransfer.x = 30;
-            depoTransfer.y = -58;
+            depoTransfer.x = 45;//what it was:-30
+            depoTransfer.y = -53;
 
-            crater.x = -13.5;//24
-            crater.y = -64;//52.5//61
+            crater.x = -13.5;//46//24
+            crater.y = -58;//52.5//55
 
             cornerDepo.x = 72;
             cornerDepo.y = -72;
 
 
             if(startQuad == Quad.RED_LEFT) {
+                cornerDepo.x = 70;
+                cornerDepo.y = -72;
+
                 cube1.x = 24.5;//25.5
                 cube1.y = -46.5;//45.5
                 cube1Found.x = 27;
@@ -272,6 +285,8 @@ double currentIMUAngle;
                 cube3Found.x = 55;
                 cube3Found.y = -30;
             } else {
+                cornerDepo.x = -72;
+                cornerDepo.y = -72;
 
                 cube1.x = -24.5;//25.5
                 cube1.y = -46.5;//45.5
@@ -492,7 +507,7 @@ double currentIMUAngle;
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
         detector.alignPosOffset = 0;
-        detector.alignSize = 200;
+        detector.alignSize = 210;
 
 
         // Set the detector
@@ -501,6 +516,7 @@ double currentIMUAngle;
         vuforia.showDebug();
         vuforia.start();
         /** Wait for the game to begin */
+
 
 
         startIMUAngle = getIMUAngle();
@@ -518,36 +534,42 @@ double currentIMUAngle;
 
 
 
-        robot.lifter.setPower(0.95);
-        robot.extender.setPower(-0.03);
-        sleep(900);
-        robot.lifter.setPower(0.05);
-        robot.extender.setPower(0);
-        sleep(1000);
-        robot.lifter.setPower(0);
 
-        raiseTo(-416);
-        encoderDrive(DRIVE_SPEED, 3, 3, 1);
-        encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
-        raiseTo(-482);//453
-        encoderDrive(DRIVE_SPEED, 4, 4, 2);
-        encoderDrive(TURN_SPEED, -3, 4, 3);
-        //raiseTo(-482);
-        encoderDrive(TURN_SPEED, -3, 3, 2);
-        encoderDrive(DRIVE_SPEED, 3, 3, 2);
-        encoderDrive(TURN_SPEED, -4, 4, 2);
-        encoderDrive(DRIVE_SPEED, 3, 3, 2);
-        encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
-        encoderDrive(DRIVE_SPEED, 8, 8, 4);//was 7 inches
 
 
 
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+            robot.lifter.setPower(0.99);//95
+            robot.extender.setPower(-0.03);
+            sleep(960);//900
+            robot.lifter.setPower(0.05);
+            robot.extender.setPower(0);
+            sleep(1000);
+            robot.lifter.setPower(0);
+
+            raiseTo(-416);
+            encoderDrive(DRIVE_SPEED, 3, 3, 1);
+            encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
+            raiseTo(-482);//453
+            encoderDrive(DRIVE_SPEED, 4, 4, 2);
+            encoderDrive(TURN_SPEED, -3, 4, 3);
+            //raiseTo(-482);
+            encoderDrive(TURN_SPEED, -3, 3, 2);
+            encoderDrive(DRIVE_SPEED, 3, 3, 2);
+            encoderDrive(TURN_SPEED, -4, 4, 2);
+            encoderDrive(DRIVE_SPEED, 3, 3, 2);
+            encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
+            encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
+
             currentIMUAngle = getIMUAngle() - startIMUAngle;
-            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-15), degreesToInches(-(currentIMUAngle-15)), 8);//was 155
+            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-23), degreesToInches(-(currentIMUAngle-23)), 8);//was 155
+            encoderDrive(DRIVE_SPEED, 3, 3, 1);
         } else {
-            //encoderDrive(TURN_SPEED, degreesToInches());
+            encoderDrive(DRIVE_SPEED, -10, -10, 4);
+            /*currentIMUAngle = getIMUAngle() - (startIMUAngle + 255);
+            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 8);*/
+            encoderDrive(TURN_SPEED, degreesToInches(100), degreesToInches(-100), 4);
         }
 
 
@@ -623,7 +645,7 @@ double currentIMUAngle;
                     break;
                 }
             }
-            if (targetVisible && (robotLocationTransform) ) {
+            if (targetVisible && (robotLocationTransform != null) ) {
                 break;
             }
         }
@@ -640,9 +662,13 @@ double currentIMUAngle;
             robotInfo.y = translation.get(1) / mmPerInch;
             // express the rotation of the robot in degrees.
             rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
+            RobotLog.ii(Tag, "X, Y, Z} = %.1f, %.1f, %.1f",
+                                                translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
             RobotLog.ii(Tag, "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             robotInfo.degrees = rotation.thirdAngle;
+            startIMUAngle = getIMUAngle();
+            startIMUOfset = robotInfo.degrees - startIMUAngle;
         }
         else {
             if (startQuad == Quad.BLUE_LEFT) {
@@ -689,22 +715,34 @@ double currentIMUAngle;
             }
         }
 
-        if(startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
+        if(startQuad == Quad.RED_LEFT || startQuad == Quad.BLUE_LEFT) {
             driveTo(robotInfo, Depot, true);
+            if(robot.sensorFront.getDistance(DistanceUnit.INCH) < 11) {
+                encoderDrive(DRIVE_SPEED, (robot.sensorFront.getDistance(DistanceUnit.INCH)-11), (robot.sensorFront.getDistance(DistanceUnit.INCH)-11), 1);
+             RobotLog.ii(Tag, "Distance sensor: Moving backwards");
+            }
+            RobotLog.ii(Tag, "Distance sensor: value of sensor: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
+
             turnTo(robotInfo, cornerDepo);
             robot.marker.setPower(-1);//0.9
-            sleep(600);//915
+            sleep(1400);//915
             robot.marker.setPower(1);
             sleep(530);
             robot.marker.setPower(0);
-            driveTo(robotInfo, depoTransfer, true);
+            encoderDrive(TURN_SPEED, -3, -3, 1);
+            /*driveTo(robotInfo, depoTransfer, true);
             driveTo(robotInfo, transfer, true);
-            driveTo(robotInfo, crater, false);
+            driveTo(robotInfo, crater, false);*/
+        } else {
+            turnTo(robotInfo, cornerDepo);
+
+            robot.arm.setPower(0.9);
+            sleep(1500);
+            robot.arm.setPower(0);
         }
 
-        robot.arm.setPower(0.9);
-        sleep(1500);
-        robot.arm.setPower(0);
+
+
 
 
 
@@ -751,15 +789,18 @@ double currentIMUAngle;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         double theta = Math.atan2(deltaY, deltaX);
         double turn = Math.toDegrees(theta) - r.degrees;
+        double startIMUangle = getIMUAngle();//for loging
         if (turn > 180) {
             turn -= 360;
         }
         if (turn < -180) {
             turn += 360;
         }
-        encoderDrive(0.2, -degreesToInches(turn), degreesToInches(turn), 5);
+        RobotLog.ii(Tag, "turnTo: comanded angle: %.2f", turn);
+        encoderDrive(0.12, -degreesToInches(turn), degreesToInches(turn), 5);
         r.degrees = Math.toDegrees(theta);
         telemetry.addData("Robot Heading", r.degrees);
+        RobotLog.ii(Tag, "turnTo: turned IMU angle: %.2f", getIMUAngle() - startIMUangle);
 
         robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -780,13 +821,14 @@ double currentIMUAngle;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         double theta = Math.atan2(deltaY, deltaX);
         double turn = Math.toDegrees(theta) - r.degrees;
+        double startIMUangle = getIMUAngle();//for loging
         if (turn > 180) {
             turn -= 360;
         }
         if (turn < -180) {
             turn += 360;
         }
-        if(brake = true) {
+        if(brake == true) {
             robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
@@ -795,7 +837,7 @@ double currentIMUAngle;
         encoderDrive(TURN_SPEED, -degreesToInches(turn), degreesToInches(turn), 5);
         encoderDrive(DRIVE_SPEED, distance, distance, 6);
 
-        if(brake = true) {
+        if(brake == true) {
             robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
@@ -806,6 +848,7 @@ double currentIMUAngle;
         telemetry.addData("RobotX:", r.x);
         telemetry.addData("RobotY", r.y);
         telemetry.addData("Robot Heading", r.degrees);
+        RobotLog.ii(Tag, "turnTo: turned IMU angle: %.2f", getIMUAngle() - startIMUangle);
     }
 
     public void raiseTo(int position) {
