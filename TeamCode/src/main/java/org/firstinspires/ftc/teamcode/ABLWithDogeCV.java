@@ -204,8 +204,8 @@ double startIMUOfset;
 
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
-            Depot.x = -54;//-47//-55
-            Depot.y = 48;//58//64//56
+            Depot.x = -55;//-47//-55
+            Depot.y = 56;//58//64//56
 
             transfer.x = -24;//what it was:-9//13
             transfer.y = 56;//what it was:61//60
@@ -469,7 +469,7 @@ double startIMUOfset;
 
         final int CAMERA_FORWARD_DISPLACEMENT  = 226;   // eg: Camera is 110 mm in front of robot center
         final int CAMERA_VERTICAL_DISPLACEMENT = 178;   // eg: Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 33;     // eg: Camera is ON the robot's center line
+        final int CAMERA_LEFT_DISPLACEMENT     = 10;     // eg: Camera is ON the robot's center line
 
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
@@ -507,7 +507,7 @@ double startIMUOfset;
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
         detector.alignPosOffset = 0;
-        detector.alignSize = 210;
+        detector.alignSize = 220;
 
 
         // Set the detector
@@ -563,8 +563,8 @@ double startIMUOfset;
             encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
 
             currentIMUAngle = getIMUAngle() - startIMUAngle;
-            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-23), degreesToInches(-(currentIMUAngle-23)), 8);//was 155
-            encoderDrive(DRIVE_SPEED, 3, 3, 1);
+            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-15), degreesToInches(-(currentIMUAngle-15)), 8);//was 155
+            encoderDrive(DRIVE_SPEED, 5, 5, 1);
         } else {
             encoderDrive(DRIVE_SPEED, -10, -10, 4);
             /*currentIMUAngle = getIMUAngle() - (startIMUAngle + 255);
@@ -630,7 +630,7 @@ double startIMUOfset;
         // check all the trackable target to see which one (if any) is visible.
         targetVisible = false;
         OpenGLMatrix robotLocationTransform = null;
-        while(runtime.seconds()<2) {
+        while(runtime.seconds()<3) {
             for (VuforiaTrackable trackable : allTrackables) {
                 if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
                     telemetry.addData("Visible Target", trackable.getName());
@@ -667,17 +667,16 @@ double startIMUOfset;
             RobotLog.ii(Tag, "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             robotInfo.degrees = rotation.thirdAngle;
-            startIMUAngle = getIMUAngle();
-            startIMUOfset = robotInfo.degrees - startIMUAngle;
+
         }
         else {
             if (startQuad == Quad.BLUE_LEFT) {
-                robotInfo.x = -21;//-16
-                robotInfo.y = 41;//36
+                robotInfo.x = -13;//-16
+                robotInfo.y = 33.5;//36
                 robotInfo.degrees = 60;
             } else if(startQuad == Quad.RED_LEFT){
-                robotInfo.x = 19;//-16
-                robotInfo.y = -44;//36
+                robotInfo.x = 13;//-16
+                robotInfo.y = -33.5;//36
                 robotInfo.degrees = -120;
             } else if(startQuad == Quad.RED_RIGHT){
                 robotInfo.x = -23;//-16
@@ -691,11 +690,15 @@ double startIMUOfset;
             telemetry.addData("Visible Target", "none");
             RobotLog.ii(Tag, "Target NOT Visible");
         }
+        startIMUAngle = getIMUAngle();
+        startIMUOfset = robotInfo.degrees - startIMUAngle;
+
         vuforia.disableTrack();
         telemetry.update();//End Viuforia
         //sleep(10000);
         turnTo(robotInfo, cube1);
         sleep(1500);//2000
+        RobotLog.ii(Tag, "sampling: x position: %.2f", detector.getXPosition());
         if(detector.getAligned()) {
             driveTo(robotInfo, cube1, true);
             if (startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
@@ -704,6 +707,7 @@ double startIMUOfset;
         } else {
             turnTo(robotInfo, cube2);
             sleep(1500);
+            RobotLog.ii(Tag, "sampling: x position: %.2f", detector.getXPosition());
             if(detector.getAligned()) {
                 driveTo(robotInfo, cube2, true);
             } else {
@@ -784,21 +788,30 @@ double startIMUOfset;
         robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        RobotLog.ii(Tag, "turnTo: initial(x,y,degrees): %.2f, %.2f, %.2f", r.x, r.y, r.degrees);
+        RobotLog.ii(Tag, "turnTo: target(x,y,degrees): %.2f, %.2f", p.x, p.y);
+
         double deltaX = p.x - r.x;
         double deltaY = p.y - r.y;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         double theta = Math.atan2(deltaY, deltaX);
         double turn = Math.toDegrees(theta) - r.degrees;
         double startIMUangle = getIMUAngle();//for loging
+        double IMUTurned;
         if (turn > 180) {
             turn -= 360;
         }
         if (turn < -180) {
             turn += 360;
         }
+        IMUTurned = getIMUField();
         RobotLog.ii(Tag, "turnTo: comanded angle: %.2f", turn);
         encoderDrive(0.12, -degreesToInches(turn), degreesToInches(turn), 5);
-        r.degrees = Math.toDegrees(theta);
+        if(Math.abs(IMUTurned - Math.toDegrees(theta)) < 9) {
+            r.degrees = getIMUField();
+        } else {
+            r.degrees = Math.toDegrees(theta);
+        }
         telemetry.addData("Robot Heading", r.degrees);
         RobotLog.ii(Tag, "turnTo: turned IMU angle: %.2f", getIMUAngle() - startIMUangle);
 
@@ -815,6 +828,12 @@ double startIMUOfset;
         return Math.round(Inches);
     }
 
+    public double getIMUField() {
+        double actual = getIMUAngle() + startIMUOfset;
+        RobotLog.ii(Tag, "getIMUField: returned angle: %.2f", actual);
+        return(actual);
+    }
+
     public void driveTo(RobotInfo r, Position p, boolean brake) {
         double deltaX = p.x - r.x;
         double deltaY = p.y - r.y;
@@ -822,12 +841,18 @@ double startIMUOfset;
         double theta = Math.atan2(deltaY, deltaX);
         double turn = Math.toDegrees(theta) - r.degrees;
         double startIMUangle = getIMUAngle();//for loging
+        double IMUTurned;
+
+        RobotLog.ii(Tag, "driveTo: initial(x,y,degrees): %.2f, %.2f, %.2f", r.x, r.y, r.degrees);
+        RobotLog.ii(Tag, "driveTo: target(x,y,degrees): %.2f, %.2f", p.x, p.y);
+
         if (turn > 180) {
             turn -= 360;
         }
         if (turn < -180) {
             turn += 360;
         }
+        RobotLog.ii(Tag, "DriveTo: comanded angle: %.2f", turn);
         if(brake == true) {
             robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -841,14 +866,20 @@ double startIMUOfset;
             robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         }
+        IMUTurned = getIMUField();
 
         r.x = p.x;
         r.y = p.y;
-        r.degrees = Math.toDegrees(theta);
+        if(Math.abs(IMUTurned - Math.toDegrees(theta)) < 9) {
+            r.degrees = getIMUField();
+        } else {
+            r.degrees = Math.toDegrees(theta);
+        }
+
         telemetry.addData("RobotX:", r.x);
         telemetry.addData("RobotY", r.y);
         telemetry.addData("Robot Heading", r.degrees);
-        RobotLog.ii(Tag, "turnTo: turned IMU angle: %.2f", getIMUAngle() - startIMUangle);
+        RobotLog.ii(Tag, "DriveTo: turned IMU angle: %.2f", getIMUAngle() - startIMUangle);
     }
 
     public void raiseTo(int position) {
