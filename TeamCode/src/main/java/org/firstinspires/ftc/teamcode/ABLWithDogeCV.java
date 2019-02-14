@@ -205,7 +205,7 @@ double startIMUOfset;
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
             Depot.x = -55;//-47//-55
-            Depot.y = 55;//58//64//56
+            Depot.y = 54;//58//64//56
 
             transfer.x = -24;//what it was:-9//13
             transfer.y = 56;//what it was:61//60
@@ -252,8 +252,8 @@ double startIMUOfset;
                 cube3Found.y = 30;
             }
         } else {
-            Depot.x =54;//-47//-55
-            Depot.y = -48;//58//64//56
+            Depot.x =55;//-47//-55
+            Depot.y = -54;//58//64//56//-48
 
             transfer.x = 23;//what it was:-9
             transfer.y = -58;//what it was:61
@@ -695,27 +695,69 @@ double startIMUOfset;
         }
         else {
             if (startQuad == Quad.BLUE_LEFT) {
-                robotInfo.x = -13;//-16
-                robotInfo.y = 33.5;//36
-                robotInfo.degrees = 60;
+                robotInfo.x = -19.6;//-16
+                robotInfo.y = 24.5;
+                robotInfo.degrees = 65;
             } else if(startQuad == Quad.RED_LEFT){
-                robotInfo.x = 13;//-16
-                robotInfo.y = -33.5;//36
-                robotInfo.degrees = -120;
+                robotInfo.x = 19.6;//-16
+                robotInfo.y = -24.5;
+                robotInfo.degrees = -65;
             } else if(startQuad == Quad.RED_RIGHT){
-                robotInfo.x = -23;//-16
-                robotInfo.y = -46;//36
-                robotInfo.degrees = -60;
+                robotInfo.x = -19.6;//-16
+                robotInfo.y = -24.5;
+                robotInfo.degrees = -115;
             } else if(startQuad == Quad.BLUE_RIGHT){
-                robotInfo.x = 21;//-16
-                robotInfo.y = 41;//36
-                robotInfo.degrees = 120;
+                robotInfo.x = 19.6;//-16
+                robotInfo.y = 24.5;
+                robotInfo.degrees = 115;
             }
             telemetry.addData("Visible Target", "none");
             RobotLog.ii(Tag, "Target NOT Visible");
         }
         startIMUAngle = getIMUAngle();
         startIMUOfset = robotInfo.degrees - startIMUAngle;
+
+        if((startQuad == Quad.BLUE_LEFT) || (startQuad == Quad.RED_RIGHT)) {
+            if(robotInfo.x > 0) {
+                if (startQuad == Quad.BLUE_LEFT) {
+                    robotInfo.x = -13;//-16
+                    robotInfo.y = 33.5;//36
+                    robotInfo.degrees = 60;
+                } else if(startQuad == Quad.RED_LEFT){
+                    robotInfo.x = 13;//-16
+                    robotInfo.y = -33.5;//36
+                    robotInfo.degrees = -120;
+                } else if(startQuad == Quad.RED_RIGHT){
+                    robotInfo.x = -23;//-16
+                    robotInfo.y = -46;//36
+                    robotInfo.degrees = -60;
+                } else if(startQuad == Quad.BLUE_RIGHT){
+                    robotInfo.x = 21;//-16
+                    robotInfo.y = 41;//36
+                    robotInfo.degrees = 120;
+                }
+            }
+        } else {
+            if(robotInfo.x < 0) {
+                if (startQuad == Quad.BLUE_LEFT) {
+                    robotInfo.x = -13;//-16
+                    robotInfo.y = 33.5;//36
+                    robotInfo.degrees = 60;
+                } else if(startQuad == Quad.RED_LEFT){
+                    robotInfo.x = 13;//-16
+                    robotInfo.y = -33.5;//36
+                    robotInfo.degrees = -120;
+                } else if(startQuad == Quad.RED_RIGHT){
+                    robotInfo.x = -23;//-16
+                    robotInfo.y = -46;//36
+                    robotInfo.degrees = -60;
+                } else if(startQuad == Quad.BLUE_RIGHT){
+                    robotInfo.x = 21;//-16
+                    robotInfo.y = 41;//36
+                    robotInfo.degrees = 120;
+                }
+            }
+        }
 
         vuforia.disableTrack();
         telemetry.update();//End Viuforia
