@@ -205,7 +205,7 @@ double startIMUOfset;
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.BLUE_RIGHT) {
             Depot.x = -55;//-47//-55
-            Depot.y = 56;//58//64//56
+            Depot.y = 55;//58//64//56
 
             transfer.x = -24;//what it was:-9//13
             transfer.y = 56;//what it was:61//60
@@ -219,7 +219,7 @@ double startIMUOfset;
 
 
             if(startQuad == Quad.BLUE_LEFT) {
-                cornerDepo.x = -70;
+                cornerDepo.x = -68;
                 cornerDepo.y = 72;
 
                 cube1.x = -24.5;//25.5
@@ -475,7 +475,7 @@ double startIMUOfset;
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
                 .multiplied(Orientation.getRotationMatrix(AxesReference.EXTRINSIC, AxesOrder.XZY,AngleUnit.DEGREES,
-                        90, 90, 0));
+                        90, 90, 5));
 
         /**  Let all the trackable listeners know where the phone is.  */
         for (VuforiaTrackable trackable : allTrackables)
@@ -507,7 +507,7 @@ double startIMUOfset;
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
         detector.alignPosOffset = 0;
-        detector.alignSize = 220;
+        detector.alignSize = 236;
 
 
         // Set the detector
@@ -626,11 +626,18 @@ double startIMUOfset;
 
         double leftPower;
         double rightPower;
-        sleep(1300);
+
+        double[] xPositions = {0.0, 0.0, 0.0};
+        double[] yPositions = {0.0, 0.0, 0.0};
+        double[] headings = {0.0, 0.0, 0.0};
+
+        int vuforiaCount = 0;
+        int vuforiaIndex = 0;
+        sleep(1600);
         // check all the trackable target to see which one (if any) is visible.
         targetVisible = false;
         OpenGLMatrix robotLocationTransform = null;
-        while(runtime.seconds()<3) {
+        while(runtime.seconds()<4) {
             for (VuforiaTrackable trackable : allTrackables) {
                 if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
                     telemetry.addData("Visible Target", trackable.getName());
@@ -641,12 +648,26 @@ double startIMUOfset;
                     robotLocationTransform = ((VuforiaTrackableDefaultListener) trackable.getListener()).getUpdatedRobotLocation();
                     if (robotLocationTransform != null) {
                         lastLocation = robotLocationTransform;
+                        xPositions[vuforiaIndex] = lastLocation.getTranslation().get(0) / mmPerInch;
+                        yPositions[vuforiaIndex] = lastLocation.getTranslation().get(1) / mmPerInch;
+                        headings[vuforiaIndex] = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES).thirdAngle;
+                        RobotLog.ii(Tag, "xPositions [ %d] = %.2f", vuforiaIndex, xPositions[vuforiaIndex]);
+                        RobotLog.ii(Tag, "yPositions [ %d] = %.2f", vuforiaIndex, yPositions[vuforiaIndex]);
+                        RobotLog.ii(Tag, "headings [ %d] = %.2f", vuforiaIndex, headings[vuforiaIndex]);
+                        vuforiaIndex += 1;
                     }
-                    break;
+
+                        break;
+
+
                 }
             }
             if (targetVisible && (robotLocationTransform != null) ) {
-                break;
+                if(vuforiaIndex > 2) {
+                    RobotLog.ii(Tag, "averaged x positions: %.2f", ((xPositions[0] + xPositions[1] + xPositions[2]) / vuforiaIndex));
+                    RobotLog.ii(Tag, "averaged y positions: %.2f", ((yPositions[0] + yPositions[1] + yPositions[2])/ vuforiaIndex));
+                    break;
+                }
             }
         }
         // Provide feedback as to where the robot is located (if we know).
@@ -658,15 +679,18 @@ double startIMUOfset;
            translation = lastLocation.getTranslation();
             telemetry.addData("Pos (in)", "{X, Y, Z} = %.1f, %.1f, %.1f",
                     translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
-            robotInfo.x = translation.get(0) / mmPerInch;
-            robotInfo.y = translation.get(1) / mmPerInch;
+            //robotInfo.x = translation.get(0) / mmPerInch;
+            robotInfo.x = (xPositions[0] + xPositions[1] + xPositions[2]) / vuforiaIndex;
+            //robotInfo.y = translation.get(1) / mmPerInch;
+            robotInfo.y = (yPositions[0] + yPositions[1] + yPositions[2])/ vuforiaIndex;
             // express the rotation of the robot in degrees.
             rotation = Orientation.getOrientation(lastLocation, EXTRINSIC, XYZ, DEGREES);
             RobotLog.ii(Tag, "X, Y, Z} = %.1f, %.1f, %.1f",
                                                 translation.get(0) / mmPerInch, translation.get(1) / mmPerInch, translation.get(2) / mmPerInch);
             RobotLog.ii(Tag, "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
             telemetry.addData("Rot (deg)", "{Roll, Pitch, Heading} = %.0f, %.0f, %.0f", rotation.firstAngle, rotation.secondAngle, rotation.thirdAngle);
-            robotInfo.degrees = rotation.thirdAngle;
+            //robotInfo.degrees = rotation.thirdAngle;
+            robotInfo.degrees = ((headings[0] + headings[1] + headings[2]) / vuforiaIndex);
 
         }
         else {
@@ -717,6 +741,10 @@ double startIMUOfset;
                     driveTo(robotInfo, cube3Found, true);
                 }
             }
+        }
+        if(robot.sensorFront.getDistance(DistanceUnit.INCH) < 15) {
+            encoderDrive(DRIVE_SPEED, (robot.sensorFront.getDistance(DistanceUnit.INCH)-11), (robot.sensorFront.getDistance(DistanceUnit.INCH)-11), 1);
+            RobotLog.ii(Tag, "Distance sensor: Moving backwards");
         }
 
         if(startQuad == Quad.RED_LEFT || startQuad == Quad.BLUE_LEFT) {
@@ -806,7 +834,7 @@ double startIMUOfset;
         }
         IMUTurned = getIMUField();
         RobotLog.ii(Tag, "turnTo: comanded angle: %.2f", turn);
-        encoderDrive(0.12, -degreesToInches(turn), degreesToInches(turn), 5);
+        encoderDrive(0.2, -degreesToInches(turn), degreesToInches(turn), 5);//power was 1.3
         if(Math.abs(IMUTurned - Math.toDegrees(theta)) < 9) {
             r.degrees = getIMUField();
         } else {
