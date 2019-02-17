@@ -255,21 +255,19 @@ double startIMUOfset;
             Depot.x =55;//-47//-55
             Depot.y = -54;//58//64//56//-48
 
-            transfer.x = 23;//what it was:-9
-            transfer.y = -58;//what it was:61
+            transfer.x = 24;//what it was:-9
+            transfer.y = -56;//what it was:61
 
-            depoTransfer.x = 45;//what it was:-30
+            depoTransfer.x = 46;//what it was:-30
             depoTransfer.y = -53;
 
             crater.x = -13.5;//46//24
             crater.y = -58;//52.5//55
 
-            cornerDepo.x = 72;
-            cornerDepo.y = -72;
 
 
             if(startQuad == Quad.RED_LEFT) {
-                cornerDepo.x = 70;
+                cornerDepo.x = 68;
                 cornerDepo.y = -72;
 
                 cube1.x = 24.5;//25.5
@@ -532,7 +530,27 @@ double startIMUOfset;
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
+        robot.lifter.setPower(0.99);//95
+        robot.extender.setPower(-0.03);
+        sleep(960);//900
+        robot.lifter.setPower(0.05);
+        robot.extender.setPower(0);
+        sleep(1000);
+        robot.lifter.setPower(0);
 
+        raiseTo(-416);
+        encoderDrive(DRIVE_SPEED, 3, 3, 1);
+        encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
+        raiseTo(-482);//453
+        encoderDrive(DRIVE_SPEED, 4, 4, 2);
+        encoderDrive(TURN_SPEED, -3, 4, 3);
+        //raiseTo(-482);
+        encoderDrive(TURN_SPEED, -3, 3, 2);
+        encoderDrive(DRIVE_SPEED, 3, 3, 2);
+        encoderDrive(TURN_SPEED, -4, 4, 2);
+        encoderDrive(DRIVE_SPEED, 3, 3, 2);
+        encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
+        encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
 
 
 
@@ -540,36 +558,14 @@ double startIMUOfset;
 
 
         if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
-            robot.lifter.setPower(0.99);//95
-            robot.extender.setPower(-0.03);
-            sleep(960);//900
-            robot.lifter.setPower(0.05);
-            robot.extender.setPower(0);
-            sleep(1000);
-            robot.lifter.setPower(0);
-
-            raiseTo(-416);
-            encoderDrive(DRIVE_SPEED, 3, 3, 1);
-            encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
-            raiseTo(-482);//453
-            encoderDrive(DRIVE_SPEED, 4, 4, 2);
-            encoderDrive(TURN_SPEED, -3, 4, 3);
-            //raiseTo(-482);
-            encoderDrive(TURN_SPEED, -3, 3, 2);
-            encoderDrive(DRIVE_SPEED, 3, 3, 2);
-            encoderDrive(TURN_SPEED, -4, 4, 2);
-            encoderDrive(DRIVE_SPEED, 3, 3, 2);
-            encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
-            encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
-
             currentIMUAngle = getIMUAngle() - startIMUAngle;
             encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-15), degreesToInches(-(currentIMUAngle-15)), 8);//was 155
             encoderDrive(DRIVE_SPEED, 5, 5, 1);
         } else {
-            encoderDrive(DRIVE_SPEED, -10, -10, 4);
+            currentIMUAngle = (startIMUAngle + 190)- getIMUAngle();
             /*currentIMUAngle = getIMUAngle() - (startIMUAngle + 255);
             encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 8);*/
-            encoderDrive(TURN_SPEED, degreesToInches(100), degreesToInches(-100), 4);
+            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 4);
         }
 
 
@@ -695,21 +691,21 @@ double startIMUOfset;
         }
         else {
             if (startQuad == Quad.BLUE_LEFT) {
-                robotInfo.x = -19.6;//-16
-                robotInfo.y = 24.5;
-                robotInfo.degrees = 65;
+                robotInfo.x = -15.8;//-19.6
+                robotInfo.y = 24.3;//24.5
+                robotInfo.degrees = 72;//65
             } else if(startQuad == Quad.RED_LEFT){
-                robotInfo.x = 19.6;//-16
-                robotInfo.y = -24.5;
-                robotInfo.degrees = -65;
+                robotInfo.x = 15.8;
+                robotInfo.y = -24.3;
+                robotInfo.degrees = -72;//-65
             } else if(startQuad == Quad.RED_RIGHT){
-                robotInfo.x = -19.6;//-16
-                robotInfo.y = -24.5;
-                robotInfo.degrees = -115;
+                robotInfo.x = -15.8;
+                robotInfo.y = -24.3;
+                robotInfo.degrees = -108;//-115
             } else if(startQuad == Quad.BLUE_RIGHT){
-                robotInfo.x = 19.6;//-16
-                robotInfo.y = 24.5;
-                robotInfo.degrees = 115;
+                robotInfo.x = 15.8;
+                robotInfo.y = 24.3;
+                robotInfo.degrees = 108;//115
             }
             telemetry.addData("Visible Target", "none");
             RobotLog.ii(Tag, "Target NOT Visible");
@@ -718,43 +714,45 @@ double startIMUOfset;
         startIMUOfset = robotInfo.degrees - startIMUAngle;
 
         if((startQuad == Quad.BLUE_LEFT) || (startQuad == Quad.RED_RIGHT)) {
-            if(robotInfo.x > 0) {
+            if((robotInfo.x > 0) || (robotInfo.x < -25)) {
+                RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
                 if (startQuad == Quad.BLUE_LEFT) {
-                    robotInfo.x = -13;//-16
-                    robotInfo.y = 33.5;//36
-                    robotInfo.degrees = 60;
+                    robotInfo.x = -15.8;//-19.6
+                    robotInfo.y = 24.3;//24.5
+                    robotInfo.degrees = 72;//65
                 } else if(startQuad == Quad.RED_LEFT){
-                    robotInfo.x = 13;//-16
-                    robotInfo.y = -33.5;//36
-                    robotInfo.degrees = -120;
+                    robotInfo.x = 15.8;
+                    robotInfo.y = -24.3;
+                    robotInfo.degrees = -72;//-65
                 } else if(startQuad == Quad.RED_RIGHT){
-                    robotInfo.x = -23;//-16
-                    robotInfo.y = -46;//36
-                    robotInfo.degrees = -60;
+                    robotInfo.x = -15.8;
+                    robotInfo.y = -24.3;
+                    robotInfo.degrees = -108;//-115
                 } else if(startQuad == Quad.BLUE_RIGHT){
-                    robotInfo.x = 21;//-16
-                    robotInfo.y = 41;//36
-                    robotInfo.degrees = 120;
+                    robotInfo.x = 15.8;
+                    robotInfo.y = 24.3;
+                    robotInfo.degrees = 108;//115
                 }
             }
         } else {
-            if(robotInfo.x < 0) {
+            if((robotInfo.x < 0) || (robotInfo.x > 25)) {
+                RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
                 if (startQuad == Quad.BLUE_LEFT) {
-                    robotInfo.x = -13;//-16
-                    robotInfo.y = 33.5;//36
-                    robotInfo.degrees = 60;
+                    robotInfo.x = -15.8;//-19.6
+                    robotInfo.y = 24.3;//24.5
+                    robotInfo.degrees = 72;//65
                 } else if(startQuad == Quad.RED_LEFT){
-                    robotInfo.x = 13;//-16
-                    robotInfo.y = -33.5;//36
-                    robotInfo.degrees = -120;
+                    robotInfo.x = 15.8;
+                    robotInfo.y = -24.3;
+                    robotInfo.degrees = -72;//-65
                 } else if(startQuad == Quad.RED_RIGHT){
-                    robotInfo.x = -23;//-16
-                    robotInfo.y = -46;//36
-                    robotInfo.degrees = -60;
+                    robotInfo.x = -15.8;
+                    robotInfo.y = -24.3;
+                    robotInfo.degrees = -108;//-115
                 } else if(startQuad == Quad.BLUE_RIGHT){
-                    robotInfo.x = 21;//-16
-                    robotInfo.y = 41;//36
-                    robotInfo.degrees = 120;
+                    robotInfo.x = 15.8;
+                    robotInfo.y = 24.3;
+                    robotInfo.degrees = 108;//115
                 }
             }
         }
@@ -791,8 +789,8 @@ double startIMUOfset;
 
         if(startQuad == Quad.RED_LEFT || startQuad == Quad.BLUE_LEFT) {
             driveTo(robotInfo, Depot, true);
-            if(robot.sensorFront.getDistance(DistanceUnit.INCH) < 11) {
-                encoderDrive(DRIVE_SPEED, (robot.sensorFront.getDistance(DistanceUnit.INCH)-11), (robot.sensorFront.getDistance(DistanceUnit.INCH)-11), 1);
+            if(robot.sensorFront.getDistance(DistanceUnit.INCH) < 12) {
+                encoderDrive(DRIVE_SPEED, (robot.sensorFront.getDistance(DistanceUnit.INCH)-12), (robot.sensorFront.getDistance(DistanceUnit.INCH)-12), 1);
              RobotLog.ii(Tag, "Distance sensor: Moving backwards");
             }
             RobotLog.ii(Tag, "Distance sensor: value of sensor: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
