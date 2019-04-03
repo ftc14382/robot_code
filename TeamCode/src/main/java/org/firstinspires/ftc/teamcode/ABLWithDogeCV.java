@@ -167,6 +167,7 @@ public static final String Tag = "OurLog";
     private Position cube1Found = new Position();
     private Position cube3Found = new Position();
     private Position cornerDepo = new Position();
+    private Position cube3SetUp = new Position();
 
 
 
@@ -234,6 +235,9 @@ double startIMUOfset;
                 cube3.y = 25.5;
                 cube3Found.x = -55;
                 cube3Found.y = 30;
+
+                cube3SetUp.x = -30;
+                cube3SetUp.y = 17;
             } else {
                 cornerDepo.x = 72;
                 cornerDepo.y = 72;
@@ -250,6 +254,9 @@ double startIMUOfset;
                 cube3.y = 25.5;
                 cube3Found.x = 55;
                 cube3Found.y = 30;
+
+                cube3SetUp.x = 30;
+                cube3SetUp.y = 17;
             }
         } else {
             Depot.x =55;//-47//-55
@@ -282,6 +289,9 @@ double startIMUOfset;
                 cube3.y = -25.5;
                 cube3Found.x = 55;
                 cube3Found.y = -30;
+
+                cube3SetUp.x = 30;
+                cube3SetUp.y = -17;
             } else {
                 cornerDepo.x = -72;
                 cornerDepo.y = -72;
@@ -298,6 +308,9 @@ double startIMUOfset;
                 cube3.y = -25.5;
                 cube3Found.x = -55;
                 cube3Found.y = -30;
+
+                cube3SetUp.x = -30;
+                cube3SetUp.y = -17;
             }
         }
 
@@ -714,7 +727,7 @@ double startIMUOfset;
         startIMUOfset = robotInfo.degrees - startIMUAngle;
 
         if((startQuad == Quad.BLUE_LEFT) || (startQuad == Quad.RED_RIGHT)) {
-            if((robotInfo.x > 0) || (robotInfo.x < -25)) {
+            if((robotInfo.x > -10) || (robotInfo.x < -25)) {
                 RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
                 if (startQuad == Quad.BLUE_LEFT) {
                     robotInfo.x = -15.8;//-19.6
@@ -735,7 +748,7 @@ double startIMUOfset;
                 }
             }
         } else {
-            if((robotInfo.x < 0) || (robotInfo.x > 25)) {
+            if((robotInfo.x <  10) || (robotInfo.x > 25)) {
                 RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
                 if (startQuad == Quad.BLUE_LEFT) {
                     robotInfo.x = -15.8;//-19.6
@@ -776,6 +789,7 @@ double startIMUOfset;
                 driveTo(robotInfo, cube2, true);
             } else {
                 //turnTo(robotInfo, cube3);
+                driveTo(robotInfo, cube3SetUp, true);
                 driveTo(robotInfo, cube3, true);
                 if (startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
                     driveTo(robotInfo, cube3Found, true);
