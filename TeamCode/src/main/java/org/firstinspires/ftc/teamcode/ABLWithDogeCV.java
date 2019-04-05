@@ -478,15 +478,15 @@ double startIMUOfset;
          * In this example, it is centered (left to right), but 110 mm forward of the middle of the robot, and 200 mm above ground level.
          */
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 226;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 178;   // eg: Camera is 200 mm above ground
-        final int CAMERA_LEFT_DISPLACEMENT     = 10;     // eg: Camera is ON the robot's center line
+        final int CAMERA_FORWARD_DISPLACEMENT  = 212;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 54;   // eg: Camera is 200 mm above ground
+        final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
 
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
                 .multiplied(Orientation.getRotationMatrix(AxesReference.EXTRINSIC, AxesOrder.XZY,AngleUnit.DEGREES,
-                        90, 90, 5));
+                        -90, -90, 0));
 
         /**  Let all the trackable listeners know where the phone is.  */
         for (VuforiaTrackable trackable : allTrackables)
@@ -543,45 +543,42 @@ double startIMUOfset;
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
-        robot.lifter.setPower(0.99);//95
-        robot.extender.setPower(-0.03);
-        sleep(960);//900
-        robot.lifter.setPower(0.05);
-        robot.extender.setPower(0);
-        sleep(1000);
-        robot.lifter.setPower(0);
+        if(false) {//This takes out the landing for testing purposes
+            robot.lifter.setPower(0.99);//95
+            robot.extender.setPower(-0.03);
+            sleep(960);//900
+            robot.lifter.setPower(0.05);
+            robot.extender.setPower(0);
+            sleep(1000);
+            robot.lifter.setPower(0);
 
-        raiseTo(-416);
-        encoderDrive(DRIVE_SPEED, 3, 3, 1);
-        encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
-        raiseTo(-482);//453
-        encoderDrive(DRIVE_SPEED, 4, 4, 2);
-        encoderDrive(TURN_SPEED, -3, 4, 3);
-        //raiseTo(-482);
-        encoderDrive(TURN_SPEED, -3, 3, 2);
-        encoderDrive(DRIVE_SPEED, 3, 3, 2);
-        encoderDrive(TURN_SPEED, -4, 4, 2);
-        encoderDrive(DRIVE_SPEED, 3, 3, 2);
-        encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
-        encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
-
-
-
+            raiseTo(-416);
+            encoderDrive(DRIVE_SPEED, 3, 3, 1);
+            encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
+            raiseTo(-482);//453
+            encoderDrive(DRIVE_SPEED, 4, 4, 2);
+            encoderDrive(TURN_SPEED, -3, 4, 3);
+            //raiseTo(-482);
+            encoderDrive(TURN_SPEED, -3, 3, 2);
+            encoderDrive(DRIVE_SPEED, 3, 3, 2);
+            encoderDrive(TURN_SPEED, -4, 4, 2);
+            encoderDrive(DRIVE_SPEED, 3, 3, 2);
+            encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
+            encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
 
 
-
-        if(startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
-            currentIMUAngle = getIMUAngle() - startIMUAngle;
-            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle-15), degreesToInches(-(currentIMUAngle-15)), 8);//was 155
-            encoderDrive(DRIVE_SPEED, 5, 5, 1);
-        } else {
-            currentIMUAngle = (startIMUAngle + 190)- getIMUAngle();
+            if (startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+                currentIMUAngle = getIMUAngle() - startIMUAngle;
+                encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle - 15), degreesToInches(-(currentIMUAngle - 15)), 8);//was 155
+                encoderDrive(DRIVE_SPEED, 5, 5, 1);
+            } else {
+                currentIMUAngle = (startIMUAngle + 190) - getIMUAngle();
             /*currentIMUAngle = getIMUAngle() - (startIMUAngle + 255);
             encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 8);*/
-            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 4);
-        }
+                encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 4);
+            }
 
-
+        }//Now it will go to vuforia
 
         /*while(runtime.seconds()<10) {
             telemetry.addData("Cube Found: ", detector.isFound());
