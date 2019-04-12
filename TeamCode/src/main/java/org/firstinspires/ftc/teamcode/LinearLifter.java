@@ -180,10 +180,14 @@ public class LinearLifter extends LinearOpMode {
                 } else {
                     rightPower = 0;
                 }
-            } else {
+            } else if(gamepad1.left_stick_y > 1 || gamepad1.left_stick_x > 1){
                 turn = gamepad1.left_stick_x;
                 leftPower  = (gamepad1.left_stick_y - turn) * speedChange ;
                 rightPower = (gamepad1.left_stick_y + turn) * speedChange;
+            } else {
+                turn = gamepad1.left_stick_x;
+                leftPower  = (gamepad1.left_stick_y - turn) * speedChange * 0.5;
+                rightPower = (gamepad1.left_stick_y + turn) * speedChange * 0.5;
             }
 
 
