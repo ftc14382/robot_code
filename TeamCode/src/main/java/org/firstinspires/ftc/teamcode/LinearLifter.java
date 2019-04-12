@@ -191,11 +191,11 @@ public class LinearLifter extends LinearOpMode {
 
             armSpeedChange = 1-(gamepad2.right_trigger * 0.4);
             if (gamepad2.b && gamepad2.y) {
-                colapsePower = -0.05 * armSpeedChange; //colapsePower = 0.32;//for lowering
+                colapsePower = -0.8 * armSpeedChange; //colapsePower = 0.32;//for lowering
                 extendPower = 0.9 * armSpeedChange;//extendPower = -0.99;
             } else if(gamepad2.x && gamepad2.a){
-                colapsePower = 0.9 * armSpeedChange;//colapsePower = -0.32;//for raising
-                extendPower = -0.05 * armSpeedChange;//extendPower = 0.99;
+                colapsePower = 1 * armSpeedChange;//colapsePower = -0.32;//for raising
+                extendPower = -0.01 * armSpeedChange;//extendPower = 0.99;
             } else if(gamepad2.left_bumper){
                 colapsePower = gamepad2.right_stick_y;
                 extendPower = gamepad2.left_stick_y;
@@ -204,15 +204,19 @@ public class LinearLifter extends LinearOpMode {
                 extendPower = 0;
             }
 
-            if(gamepad2.left_bumper == false) {
+            if(gamepad2.left_bumper) {
+                armPower = 0;
+            } else {
                 armPower = gamepad2.left_stick_y * armSpeedChange;
             }
-            armPower = 0;
+
 
             if(gamepad2.dpad_up) {
                 markerPower = -0.6 * armSpeedChange;
             } else if(gamepad2.dpad_down) {
                 markerPower = 0.6 * armSpeedChange;
+            } else {
+                markerPower = 0;
             }
 
 
