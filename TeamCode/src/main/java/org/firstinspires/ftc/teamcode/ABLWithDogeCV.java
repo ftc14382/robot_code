@@ -35,7 +35,6 @@ import com.disnodeteam.dogecv.Dogeforia;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
-import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -49,18 +48,17 @@ import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import static org.firstinspires.ftc.robotcore.external.navigation.AngleUnit.DEGREES;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesOrder.XYZ;
 import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.EXTRINSIC;
@@ -168,7 +166,7 @@ public static final String Tag = "OurLog";
     private Position cube3Found = new Position();
     private Position cornerDepo = new Position();
     private Position cube3SetUp = new Position();
-
+    private Position clearPoint = new Position();
 
 
 
@@ -238,6 +236,9 @@ double startIMUOfset;
 
                 cube3SetUp.x = -30;
                 cube3SetUp.y = 17;
+                clearPoint.x = -16.6;
+                clearPoint.y = 16.6;
+
             } else {
                 cornerDepo.x = 72;
                 cornerDepo.y = 72;
@@ -257,6 +258,8 @@ double startIMUOfset;
 
                 cube3SetUp.x = 30;
                 cube3SetUp.y = 17;
+                clearPoint.x = 16.6;
+                clearPoint.y = 16.6;
             }
         } else {
             Depot.x =55;//-47//-55
@@ -292,6 +295,8 @@ double startIMUOfset;
 
                 cube3SetUp.x = 30;
                 cube3SetUp.y = -17;
+                clearPoint.x = 16.6;
+                clearPoint.y = -16.6;
             } else {
                 cornerDepo.x = -72;
                 cornerDepo.y = -72;
@@ -311,6 +316,8 @@ double startIMUOfset;
 
                 cube3SetUp.x = -30;
                 cube3SetUp.y = -17;
+                clearPoint.x = -16.6;
+                clearPoint.y = -16.6;
             }
         }
 
@@ -543,42 +550,44 @@ double startIMUOfset;
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
 
-        if(false) {//This takes out the landing for testing purposes
-            robot.lifter.setPower(0.99);//95
-            robot.extender.setPower(-0.03);
-            sleep(960);//900
-            robot.lifter.setPower(0.05);
-            robot.extender.setPower(0);
-            sleep(1000);
-            robot.lifter.setPower(0);
 
-            raiseTo(-416);
-            encoderDrive(DRIVE_SPEED, 3, 3, 1);
-            encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
-            raiseTo(-482);//453
-            encoderDrive(DRIVE_SPEED, 4, 4, 2);
-            encoderDrive(TURN_SPEED, -3, 4, 3);
-            //raiseTo(-482);
-            encoderDrive(TURN_SPEED, -3, 3, 2);
-            encoderDrive(DRIVE_SPEED, 3, 3, 2);
-            encoderDrive(TURN_SPEED, -4, 4, 2);
-            encoderDrive(DRIVE_SPEED, 3, 3, 2);
-            encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
-            encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
+        robot.lifter.setPower(0.99);//95
+        robot.extender.setPower(-0.09);
+        sleep(1300);//900
+        robot.lifter.setPower(-0.05);
+        robot.extender.setPower(0.6);
+        sleep(3500);
+        robot.lifter.setPower(0);
+        robot.extender.setPower(0);
+if (false) {
+    raiseTo(-416);
+    encoderDrive(DRIVE_SPEED, 3, 3, 1);
+    encoderDrive(DRIVE_SPEED, -2.5, -2.5, 1);
+    raiseTo(-482);//453
+    encoderDrive(DRIVE_SPEED, 4, 4, 2);
+    encoderDrive(TURN_SPEED, -3, 4, 3);
+    //raiseTo(-482);
+    encoderDrive(TURN_SPEED, -3, 3, 2);
+    encoderDrive(DRIVE_SPEED, 3, 3, 2);
+    encoderDrive(TURN_SPEED, -4, 4, 2);
+    encoderDrive(DRIVE_SPEED, 3, 3, 2);
+    encoderDrive(TURN_SPEED, degreesToInches(-80), degreesToInches(80), 4);//was 90 degrees
+    encoderDrive(DRIVE_SPEED, 11, 11, 4);//what it was:8 inches
+}
 
+if (false) {
+    if (startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
+        currentIMUAngle = getIMUAngle() - startIMUAngle;
+        encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle - 15), degreesToInches(-(currentIMUAngle - 15)), 8);//was 155
+        encoderDrive(DRIVE_SPEED, 5, 5, 1);
+    } else {
+        currentIMUAngle = (startIMUAngle + 190) - getIMUAngle();
+        /*currentIMUAngle = getIMUAngle() - (startIMUAngle + 255);
+        encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 8);*/
+        encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 4);
+    }
+}
 
-            if (startQuad == Quad.BLUE_LEFT || startQuad == Quad.RED_LEFT) {
-                currentIMUAngle = getIMUAngle() - startIMUAngle;
-                encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle - 15), degreesToInches(-(currentIMUAngle - 15)), 8);//was 155
-                encoderDrive(DRIVE_SPEED, 5, 5, 1);
-            } else {
-                currentIMUAngle = (startIMUAngle + 190) - getIMUAngle();
-            /*currentIMUAngle = getIMUAngle() - (startIMUAngle + 255);
-            encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 8);*/
-                encoderDrive(TURN_SPEED, degreesToInches(currentIMUAngle), degreesToInches(-currentIMUAngle), 4);
-            }
-
-        }//Now it will go to vuforia
 
         /*while(runtime.seconds()<10) {
             telemetry.addData("Cube Found: ", detector.isFound());
@@ -629,6 +638,7 @@ double startIMUOfset;
         /** Start tracking the data sets we care about. */
         targetsRoverRuckus.activate();
 
+        //sleep(10000);
 
         double leftPower;
         double rightPower;
@@ -643,7 +653,7 @@ double startIMUOfset;
         // check all the trackable target to see which one (if any) is visible.
         targetVisible = false;
         OpenGLMatrix robotLocationTransform = null;
-        while(runtime.seconds()<4) {
+        while(runtime.seconds()<-1.0) {
             for (VuforiaTrackable trackable : allTrackables) {
                 if (((VuforiaTrackableDefaultListener) trackable.getListener()).isVisible()) {
                     telemetry.addData("Visible Target", trackable.getName());
@@ -701,21 +711,21 @@ double startIMUOfset;
         }
         else {
             if (startQuad == Quad.BLUE_LEFT) {
-                robotInfo.x = -15.8;//-19.6
-                robotInfo.y = 24.3;//24.5
-                robotInfo.degrees = 72;//65
+                robotInfo.x = -14.6;//-19.6
+                robotInfo.y = 14.6;//24.5
+                robotInfo.degrees = 135;//65
             } else if(startQuad == Quad.RED_LEFT){
-                robotInfo.x = 15.8;
-                robotInfo.y = -24.3;
-                robotInfo.degrees = -72;//-65
+                robotInfo.x = 14.6;
+                robotInfo.y = -14.6;
+                robotInfo.degrees = -45;//-65
             } else if(startQuad == Quad.RED_RIGHT){
-                robotInfo.x = -15.8;
-                robotInfo.y = -24.3;
-                robotInfo.degrees = -108;//-115
+                robotInfo.x = -14.6;
+                robotInfo.y = -14.6;
+                robotInfo.degrees = -135;//-115
             } else if(startQuad == Quad.BLUE_RIGHT){
-                robotInfo.x = 15.8;
-                robotInfo.y = 24.3;
-                robotInfo.degrees = 108;//115
+                robotInfo.x = 14.6;
+                robotInfo.y = 14.6;
+                robotInfo.degrees = 45;//115
             }
             telemetry.addData("Visible Target", "none");
             RobotLog.ii(Tag, "Target NOT Visible");
@@ -723,50 +733,53 @@ double startIMUOfset;
         startIMUAngle = getIMUAngle();
         startIMUOfset = robotInfo.degrees - startIMUAngle;
 
-        if((startQuad == Quad.BLUE_LEFT) || (startQuad == Quad.RED_RIGHT)) {
-            if((robotInfo.x > -10) || (robotInfo.x < -25)) {
-                RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
-                if (startQuad == Quad.BLUE_LEFT) {
-                    robotInfo.x = -15.8;//-19.6
-                    robotInfo.y = 24.3;//24.5
-                    robotInfo.degrees = 72;//65
-                } else if(startQuad == Quad.RED_LEFT){
-                    robotInfo.x = 15.8;
-                    robotInfo.y = -24.3;
-                    robotInfo.degrees = -72;//-65
-                } else if(startQuad == Quad.RED_RIGHT){
-                    robotInfo.x = -15.8;
-                    robotInfo.y = -24.3;
-                    robotInfo.degrees = -108;//-115
-                } else if(startQuad == Quad.BLUE_RIGHT){
-                    robotInfo.x = 15.8;
-                    robotInfo.y = 24.3;
-                    robotInfo.degrees = 108;//115
+        if (false) {
+            if ((startQuad == Quad.BLUE_LEFT) || (startQuad == Quad.RED_RIGHT)) {
+                if ((robotInfo.x > -10) || (robotInfo.x < -25)) {
+                    RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
+                    if (startQuad == Quad.BLUE_LEFT) {
+                        robotInfo.x = -15.8;//-19.6
+                        robotInfo.y = 24.3;//24.5
+                        robotInfo.degrees = 72;//65
+                    } else if (startQuad == Quad.RED_LEFT) {
+                        robotInfo.x = 15.8;
+                        robotInfo.y = -24.3;
+                        robotInfo.degrees = -72;//-65
+                    } else if (startQuad == Quad.RED_RIGHT) {
+                        robotInfo.x = -15.8;
+                        robotInfo.y = -24.3;
+                        robotInfo.degrees = -108;//-115
+                    } else if (startQuad == Quad.BLUE_RIGHT) {
+                        robotInfo.x = 15.8;
+                        robotInfo.y = 24.3;
+                        robotInfo.degrees = 108;//115
+                    }
                 }
-            }
-        } else {
-            if((robotInfo.x <  10) || (robotInfo.x > 25)) {
-                RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
-                if (startQuad == Quad.BLUE_LEFT) {
-                    robotInfo.x = -15.8;//-19.6
-                    robotInfo.y = 24.3;//24.5
-                    robotInfo.degrees = 72;//65
-                } else if(startQuad == Quad.RED_LEFT){
-                    robotInfo.x = 15.8;
-                    robotInfo.y = -24.3;
-                    robotInfo.degrees = -72;//-65
-                } else if(startQuad == Quad.RED_RIGHT){
-                    robotInfo.x = -15.8;
-                    robotInfo.y = -24.3;
-                    robotInfo.degrees = -108;//-115
-                } else if(startQuad == Quad.BLUE_RIGHT){
-                    robotInfo.x = 15.8;
-                    robotInfo.y = 24.3;
-                    robotInfo.degrees = 108;//115
+            } else {
+                if ((robotInfo.x < 10) || (robotInfo.x > 25)) {
+                    RobotLog.ii(Tag, "after vuforia, overwrote vuforia position");
+                    if (startQuad == Quad.BLUE_LEFT) {
+                        robotInfo.x = -15.8;//-19.6
+                        robotInfo.y = 24.3;//24.5
+                        robotInfo.degrees = 72;//65
+                    } else if (startQuad == Quad.RED_LEFT) {
+                        robotInfo.x = 15.8;
+                        robotInfo.y = -24.3;
+                        robotInfo.degrees = -72;//-65
+                    } else if (startQuad == Quad.RED_RIGHT) {
+                        robotInfo.x = -15.8;
+                        robotInfo.y = -24.3;
+                        robotInfo.degrees = -108;//-115
+                    } else if (startQuad == Quad.BLUE_RIGHT) {
+                        robotInfo.x = 15.8;
+                        robotInfo.y = 24.3;
+                        robotInfo.degrees = 108;//115
+                    }
                 }
             }
         }
 
+        driveTo(robotInfo, clearPoint, true);
         vuforia.disableTrack();
         telemetry.update();//End Viuforia
         //sleep(10000);
