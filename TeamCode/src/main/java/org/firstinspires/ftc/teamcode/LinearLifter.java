@@ -64,9 +64,11 @@ public class LinearLifter extends LinearOpMode {
     //private DcMotor midarm = null;
     private DcMotor colapser = null;
     private DcMotor extender2 = null;
-    private CRServo extender = null;
-    private CRServo arm = null;
+    private DcMotor arm = null;
+
     private CRServo marker = null;
+    private CRServo leftGrabber = null;//left grabber when arm is in the crater
+    private CRServo rightGrabber = null;//right grabber when arm is in the crater
 
     /*private CRServo grabber1 = null;
     private CRServo grabber2 = null;*/
@@ -85,11 +87,11 @@ public class LinearLifter extends LinearOpMode {
         //midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
         colapser = hardwareMap.get(DcMotor.class, "lifter");
         extender2 = hardwareMap.get(DcMotor.class, "lifter2");
-        extender = hardwareMap.get(CRServo.class, "lifter_extender");
-        arm = hardwareMap.get(CRServo.class, "arm");
+        arm = hardwareMap.get(DcMotor.class, "arm");
+
         marker = hardwareMap.get(CRServo.class, "marker");
-        /*grabber1 = hardwareMap.get(CRServo.class,  "grabber1");
-        grabber2 = hardwareMap.get(CRServo.class,  "grabber2");*/
+        leftGrabber = hardwareMap.get(CRServo.class,  "grabber1");
+        rightGrabber = hardwareMap.get(CRServo.class,  "grabber2");
         //basearm = hardwareMap.get(DcMotor.class, "base_arm");
 
         // Most robots need the motor on one side to be reversed to drive forward
@@ -100,16 +102,17 @@ public class LinearLifter extends LinearOpMode {
         //midarm.setDirection(DcMotor.Direction.FORWARD);
         colapser.setDirection(DcMotor.Direction.FORWARD);
         extender2.setDirection(DcMotor.Direction.FORWARD);
-        extender.setDirection(CRServo.Direction.FORWARD);
-        arm.setDirection(CRServo.Direction.FORWARD);
+        arm.setDirection(DcMotor.Direction.FORWARD);
         marker.setDirection(CRServo.Direction.FORWARD);
-        /*grabber1.setDirection(CRServo.Direction.FORWARD);
-        grabber2.setDirection(CRServo.Direction.REVERSE);*/
+        leftGrabber.setDirection(CRServo.Direction.FORWARD);
+        rightGrabber.setDirection(CRServo.Direction.REVERSE);
 
         leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE);
         rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         extender2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         colapser.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         //basearm.setDirection(DcMotor.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -119,7 +122,8 @@ public class LinearLifter extends LinearOpMode {
         double turn;
         double speedChange;//driving
         double armSpeedChange;//midarm
-        //double midarmPower = 0;
+        double grabberPowerL = 0.0;
+        double grabberPowerR = 0.0;
         double colapsePower = 0;
         double extendPower = 0;
         double armPower = 0;
@@ -152,19 +156,19 @@ public class LinearLifter extends LinearOpMode {
             //rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
 
             speedChange = 1-(gamepad1.right_trigger * 0.8);
-            if(gamepad1.x) {
+            if(gamepad1.x) {//turn right
                 leftPower = 1 * speedChange;
                 rightPower = -1 * speedChange;
-            } else if(gamepad1.b) {
+            } else if(gamepad1.b) {//turn left
                 leftPower = -1 * speedChange;
                 rightPower = 1 * speedChange;
-            } else if(gamepad1.y) {
+            } else if(gamepad1.y) {//drive backwards
                 leftPower = -1 * speedChange;
                 rightPower = -1 * speedChange;
-            } else if(gamepad1.a) {
+            } else if(gamepad1.a) {//drive forward
                 leftPower = 1 * speedChange;
                 rightPower = 1 * speedChange;
-            } else if(gamepad1.left_bumper) {
+            } else if(gamepad1.left_bumper) {//individually control the left wheel
                 if(gamepad1.dpad_up) {
                     leftPower = 0.1 * speedChange;
                 } else if(gamepad1.dpad_down) {
@@ -172,7 +176,7 @@ public class LinearLifter extends LinearOpMode {
                 } else {
                     leftPower = 0;
                 }
-            } else if(gamepad1.right_bumper) {
+            } else if(gamepad1.right_bumper) {//individually control the right wheel
                 if(gamepad1.dpad_up) {
                     rightPower = 0.1 * speedChange;
                 } else if(gamepad1.dpad_down) {
@@ -180,14 +184,14 @@ public class LinearLifter extends LinearOpMode {
                 } else {
                     rightPower = 0;
                 }
-            } else if(gamepad1.left_stick_y > 1 || gamepad1.left_stick_x > 1){
+            } else if(gamepad1.left_stick_y != 0 || gamepad1.left_stick_x != 0){//use the left stick to drive fast
                 turn = gamepad1.left_stick_x;
                 leftPower  = (gamepad1.left_stick_y - turn) * speedChange ;
                 rightPower = (gamepad1.left_stick_y + turn) * speedChange;
-            } else {
-                turn = gamepad1.left_stick_x;
-                leftPower  = (gamepad1.left_stick_y - turn) * speedChange * 0.5;
-                rightPower = (gamepad1.left_stick_y + turn) * speedChange * 0.5;
+            } else {//use the right sick to drive slow
+                turn = gamepad1.right_stick_x;
+                leftPower  = (gamepad1.right_stick_y - turn) * speedChange * 0.5;
+                rightPower = (gamepad1.right_stick_y + turn) * speedChange * 0.5;
             }
 
 
@@ -200,7 +204,7 @@ public class LinearLifter extends LinearOpMode {
             } else if(gamepad2.x && gamepad2.a){
                 colapsePower = 1 * armSpeedChange;//colapsePower = -0.32;//for raising
                 extendPower = -0.01 * armSpeedChange;//extendPower = 0.99;
-            } else if(gamepad2.left_bumper){
+            } else if(gamepad2.left_bumper){//individually control the two lifting motors
                 colapsePower = gamepad2.right_stick_y;
                 extendPower = gamepad2.left_stick_y;
             } else {
@@ -210,8 +214,12 @@ public class LinearLifter extends LinearOpMode {
 
             if(gamepad2.left_bumper) {
                 armPower = 0;
+            } else if(gamepad2.a && (gamepad2.x == FALSE))  {
+                armPower = -0.35;
+            } else if(gamepad2.y && (gamepad2.b == FALSE)) {
+                armPower = 0.35;
             } else {
-                armPower = gamepad2.left_stick_y * armSpeedChange;
+                armPower = gamepad2.left_stick_y * 0.5 * armSpeedChange;
             }
 
 
@@ -230,13 +238,39 @@ public class LinearLifter extends LinearOpMode {
 
 
 
-            /*if (gamepad2.right_bumper) {
-                grabberPower = 0.97;
-            } else if (gamepad2.left_bumper) {
-                grabberPower = -0.97;
-            } else {
-                grabberPower = 0;
-            }*/
+            if(gamepad2.right_bumper) {//for individual grabber movement
+                if(gamepad2.x) {
+                    grabberPowerR = 0.3 * armSpeedChange;
+                    grabberPowerL = 0.0 * armSpeedChange;
+                } else if(gamepad2.b) {
+                    grabberPowerR = -0.3 * armSpeedChange;
+                    grabberPowerL = 0.0 * armSpeedChange;
+                } else if(gamepad2.dpad_left) {
+                    grabberPowerL = -0.3 * armSpeedChange;
+                    grabberPowerR = 0.0 * armSpeedChange;
+                } else if(gamepad2.dpad_right) {
+                    grabberPowerL = 0.3 * armSpeedChange;
+                    grabberPowerR = 0.0 * armSpeedChange;
+                } else {
+                    grabberPowerL = 0.0;
+                    grabberPowerR = 0.0;
+                }
+            } else if(gamepad2.x && (gamepad2.a == FALSE)) {//grab something
+                grabberPowerL = 0.6 * armSpeedChange;
+                grabberPowerR = 0.6 * armSpeedChange;
+            } else if(gamepad2.b && (gamepad2.y == FALSE)) {//release something
+                grabberPowerR = -0.6 * armSpeedChange;
+                grabberPowerL = -0.6 * armSpeedChange;
+            } else if(gamepad2.dpad_right) {//grab something
+                grabberPowerR = 0.6 * armSpeedChange;
+                grabberPowerL = 0.6 * armSpeedChange;
+            } else if(gamepad2.dpad_left) {//release something
+                grabberPowerR = -0.6 * armSpeedChange;
+                grabberPowerL = -0.6 * armSpeedChange;
+            }  else {//no movement
+                grabberPowerL = 0.0;
+                grabberPowerR = 0.0;
+            }
 
 
 
@@ -251,10 +285,11 @@ public class LinearLifter extends LinearOpMode {
             rightDrive.setPower(rightPower);
             //midarm.setPower(midarmPower);
             colapser.setPower(colapsePower);
-            extender.setPower(extendPower);
             extender2.setPower(extendPower);
             arm.setPower(armPower);
             marker.setPower(markerPower);
+            leftGrabber.setPower(grabberPowerL);
+            rightGrabber.setPower(grabberPowerR);
             /*grabber1.setPower(grabberPower);
             grabber2.setPower(grabberPower);*/
             //basearm.setPower(basearmPower);
