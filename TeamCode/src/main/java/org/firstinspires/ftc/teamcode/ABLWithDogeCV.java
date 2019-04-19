@@ -556,7 +556,7 @@ double startIMUOfset;
         sleep(1300);//900
         robot.lifter.setPower(-0.05);
         robot.extender.setPower(0.6);
-        sleep(3500);
+        sleep(3800);
         robot.lifter.setPower(0);
         robot.extender.setPower(0);
 if (false) {
@@ -819,6 +819,7 @@ if (false) {
             }
             RobotLog.ii(Tag, "Distance sensor: value of sensor: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
 
+            raiseArm();
             turnTo(robotInfo, cornerDepo);
             robot.marker.setPower(-1);//0.9
             sleep(1400);//915
@@ -832,7 +833,7 @@ if (false) {
         } else {
             turnTo(robotInfo, cornerDepo);
 
-            robot.arm.setPower(0.9);
+            robot.arm.setPower(0.3);
             sleep(1500);
             robot.arm.setPower(0);
         }
@@ -972,6 +973,12 @@ if (false) {
         telemetry.addData("RobotY", r.y);
         telemetry.addData("Robot Heading", r.degrees);
         RobotLog.ii(Tag, "DriveTo: turned IMU angle: %.2f", getIMUAngle() - startIMUangle);
+    }
+
+    public void raiseArm () {
+        robot.arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.arm.setPower(0.85);
+        sleep(600);
     }
 
     public void raiseTo(int position) {

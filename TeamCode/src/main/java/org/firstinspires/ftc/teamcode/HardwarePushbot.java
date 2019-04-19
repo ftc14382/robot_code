@@ -32,7 +32,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -61,7 +60,10 @@ public class HardwarePushbot
     public CRServo marker = null;
     public DcMotor extender = null;
     public DcMotor lifter = null;
-    public CRServo arm = null;
+    public DcMotor arm = null;
+    public CRServo grabber1 = null;
+    public CRServo grabber2 = null;
+
 
 
     public DistanceSensor sensorFront;//set up distance sensor
@@ -97,9 +99,9 @@ public class HardwarePushbot
         //leftArm    = hwMap.get(DcMotor.class, "left_arm");
         extender = hwMap.get(DcMotor.class, "lifter2");
         lifter = hwMap.get(DcMotor.class, "lifter");
-        arm = hwMap.get(CRServo.class, "arm");
-
-
+        arm = hwMap.get(DcMotor.class, "arm");
+        grabber1 = hwMap.get(CRServo.class,  "grabber1");
+        grabber2 = hwMap.get(CRServo.class,  "grabber2");
         sensorFront = hwMap.get(DistanceSensor.class, "sensor_front");
         sensorFrontLeft = hwMap.get(DistanceSensor.class, "sensor_FL");
         sensorBackLeft = hwMap.get(DistanceSensor.class, "sensor_BL");
@@ -116,8 +118,9 @@ public class HardwarePushbot
         marker.setDirection(CRServo.Direction.FORWARD);
         extender.setDirection(DcMotor.Direction.FORWARD);
         lifter.setDirection(DcMotor.Direction.FORWARD);
-        arm.setDirection(CRServo.Direction.FORWARD);
-
+        arm.setDirection(DcMotor.Direction.FORWARD);
+        grabber1.setDirection(CRServo.Direction.FORWARD);
+        grabber2.setDirection(CRServo.Direction.FORWARD);
         // Set all motors to zero power
         leftDrive.setPower(0.0);
         rightDrive.setPower(0);
@@ -125,6 +128,8 @@ public class HardwarePushbot
         extender.setPower(0);
         lifter.setPower(0);
         arm.setPower(0);
+        grabber1.setPower(0);
+        grabber2.setPower(0);
         //leftArm.setPower(0);
 
         // Set all motors to run without encoders.
