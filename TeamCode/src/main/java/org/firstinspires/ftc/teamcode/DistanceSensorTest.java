@@ -538,12 +538,12 @@ double thirdReading;
         while((runtime.seconds() < 5) && opModeIsActive()) {
             RobotLog.ii(Tag, "front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
             distanceDifference = robot.sensorBackLeft.getDistance(DistanceUnit.INCH) - robot.sensorFrontLeft.getDistance(DistanceUnit.INCH);
-            if(distanceDifference < 1) {
+            if(distanceDifference < 1) {//get the right distance away from the wall
                 distanceDifference = robot.sensorFrontLeft.getDistance(DistanceUnit.INCH) - 5;
                 distanceDifference = distanceDifference * 0.1;
                 robot.leftDrive.setPower(0.5);
                 robot.rightDrive.setPower(0.5 + distanceDifference);
-            } else {
+            } else {//straighten out
                 distanceDifference = distanceDifference * 0.1;
                 robot.leftDrive.setPower(0.5 + distanceDifference);
                 robot.rightDrive.setPower(0.5);

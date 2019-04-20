@@ -34,6 +34,7 @@ import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -99,7 +100,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
  */
 
 @Autonomous(name="NewBlueLeftCV", group ="NewDogeCV")
-//@Disabled
+@Disabled
 public class NewABLWithDogeCV extends LinearOpMode {
 public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
@@ -180,33 +181,48 @@ public static final String Tag = "OurLog";
             Depot.y = 56;//58//64
 
             transfer.x = 0;
-            transfer.y = 60;
+            transfer.y = 63;
 
-            crater.x = 46;
+            crater.x = 24;//46
             crater.y = 61;//52.5
+
+            cube1.x = -25.5;
+            cube1.y = 45.5;
+            cube1Found.x = -27;
+            cube1Found.y = 54;
+
+            cube2.x = -35.5;
+            cube2.y = 35.5;
+
+            cube3.x = -45.5;
+            cube3.y = 25.5;
+            cube3Found.x = -55;
+            cube3Found.y = 30;
         } else {
             Depot.x = 55;//47
             Depot.y = -55;//58//64
 
             transfer.x = 0;
-            transfer.y = -60;
+            transfer.y = -63;
 
-            crater.x = -46;
+            crater.x = -24;
             crater.y = -61;//52.5
+
+            cube1.x = 25.5;
+            cube1.y = -45.5;
+            cube1Found.x = 27;
+            cube1Found.y = -54;
+
+            cube2.x = 35.5;
+            cube2.y = -35.5;
+
+            cube3.x = 45.5;
+            cube3.y = -25.5;
+            cube3Found.x = 55;
+            cube3Found.y = -30;
         }
 
-        cube1.x = -25.5;
-        cube1.y = 45.5;
-        cube1Found.x = -27;
-        cube1Found.y = 50;
 
-        cube2.x = -35.5;
-        cube2.y = 35.5;
-
-        cube3.x = -45.5;
-        cube3.y = 25.5;
-        cube3Found.x = -50;
-        cube3Found.y = 30;
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -387,8 +403,8 @@ public static final String Tag = "OurLog";
         detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
-        detector.alignPosOffset = 40;
-        detector.alignSize = 60;
+        detector.alignPosOffset = 0;
+        detector.alignSize = 110;
 
 
         // Set the detector
@@ -411,7 +427,7 @@ public static final String Tag = "OurLog";
         RobotInfo robotInfo = new RobotInfo();
 
         //double startLeft = robot.leftDrive.getCurrentPosition();
-        encoderDrive(TURN_SPEED, degreesToInches(90), degreesToInches(-90), 8);
+        encoderDrive(TURN_SPEED, degreesToInches(80), degreesToInches(-80), 8);
         /*while(runtime.seconds()<10) {
             telemetry.addData("Cube Found: ", detector.isFound());
             telemetry.addData("Cube X: ", detector.getXPosition());
@@ -521,23 +537,25 @@ public static final String Tag = "OurLog";
         telemetry.update();//End Viuforia
         //sleep(10000);
         turnTo(robotInfo, cube1);
-        sleep(3000);
+        sleep(2000);
         if(detector.getAligned()) {
-            driveTo(robotInfo, cube1);
-            driveTo(robotInfo, cube1Found);
+            driveTo(robotInfo, cube1, true);
+            driveTo(robotInfo, cube1Found, true);
         } else {
             turnTo(robotInfo, cube2);
-            sleep(8000);
+            sleep(2000);
             if(detector.getAligned()) {
-                driveTo(robotInfo, cube2);
+                driveTo(robotInfo, cube2, true);
             } else {
                 //turnTo(robotInfo, cube3);
-                driveTo(robotInfo, cube3);
-                driveTo(robotInfo, cube3Found);
+                driveTo(robotInfo, cube3, true);
+                driveTo(robotInfo, cube3Found, true);
             }
         }
 
-        driveTo(robotInfo, Depot);
+        driveTo(robotInfo, Depot, true);
+        driveTo(robotInfo, transfer, true);
+        driveTo(robotInfo, crater, false);
 
 
 
@@ -598,7 +616,7 @@ public static final String Tag = "OurLog";
         return Math.round(Inches);
     }
 
-    public void driveTo(RobotInfo r, Position p) {
+    public void driveTo(RobotInfo r, Position p, boolean brake) {
         double deltaX = p.x - r.x;
         double deltaY = p.y - r.y;
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -610,8 +628,20 @@ public static final String Tag = "OurLog";
         if (turn < -180) {
             turn += 360;
         }
+        if(brake = true) {
+            robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+
+
         encoderDrive(TURN_SPEED, -degreesToInches(turn), degreesToInches(turn), 5);
         encoderDrive(DRIVE_SPEED, distance, distance, 6);
+
+        if(brake = true) {
+            robot.leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            robot.rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
+
         r.x = p.x;
         r.y = p.y;
         r.degrees = Math.toDegrees(theta);

@@ -29,6 +29,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -53,7 +54,7 @@ import static java.lang.Boolean.TRUE;
  */
 
 @TeleOp(name="Everything Tank Drive", group="Linear Opmode")
-//@Disabled
+@Disabled
 public class TankDriveGrabberArm extends LinearOpMode {
 
     // Declare OpMode members.
@@ -106,9 +107,9 @@ public class TankDriveGrabberArm extends LinearOpMode {
         double lifterPower = 0;
         double grabberPower;
         boolean useMidarm = FALSE;
-        int starPositionArm = midarm.getCurrentPosition();
+        /*int starPositionArm = midarm.getCurrentPosition();
         int currentPositionArm = starPositionArm - midarm.getCurrentPosition();
-        int targetPositionArm;
+        int targetPositionArm;*/
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             // Setup a variable for each drive wheel to save power level for telemetry

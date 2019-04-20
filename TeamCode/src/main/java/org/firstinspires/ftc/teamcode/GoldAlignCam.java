@@ -33,6 +33,8 @@ import com.disnodeteam.dogecv.CameraViewDisplay;
 import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -40,6 +42,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
@@ -70,8 +75,8 @@ import static org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocaliz
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Vuforia Webcam Testing", group="DogeCV")
-
+@Autonomous(name="Vuforia Webcam Testing", group="DogeCV")
+@Disabled
 public class GoldAlignCam extends OpMode
 {
 
@@ -83,7 +88,7 @@ public class GoldAlignCam extends OpMode
 
     // Select which camera you want use.  The FRONT camera is the one on the same side as the screen.
     // Valid choices are:  BACK or FRONT
-    private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
+    //private static final VuforiaLocalizer.CameraDirection CAMERA_CHOICE = BACK;
 
     // Vuforia variables
     private OpenGLMatrix lastLocation = null;
@@ -110,7 +115,7 @@ public class GoldAlignCam extends OpMode
         // Vuforia licence key
 
 
-        parameters.fillCameraMonitorViewParent = true;
+        parameters.fillCameraMonitorViewParent = true;//This might be important?????????????????
 
 
         // Set camera name for Vuforia config
@@ -158,14 +163,19 @@ public class GoldAlignCam extends OpMode
         backSpace.setLocation(backSpaceLocationOnField);
 
 
-        final int CAMERA_FORWARD_DISPLACEMENT  = 110;   // eg: Camera is 110 mm in front of robot center
-        final int CAMERA_VERTICAL_DISPLACEMENT = 200;   // eg: Camera is 200 mm above ground
+        final int CAMERA_FORWARD_DISPLACEMENT  = 229;   // eg: Camera is 110 mm in front of robot center
+        final int CAMERA_VERTICAL_DISPLACEMENT = 152;   // eg: Camera is 200 mm above ground
         final int CAMERA_LEFT_DISPLACEMENT     = 0;     // eg: Camera is ON the robot's center line
+
+        /*OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
+                .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
+                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
+                        CAMERA_CHOICE == FRONT ? 90 : -90, 0, 0));//You might need to change this!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
         OpenGLMatrix phoneLocationOnRobot = OpenGLMatrix
                 .translation(CAMERA_FORWARD_DISPLACEMENT, CAMERA_LEFT_DISPLACEMENT, CAMERA_VERTICAL_DISPLACEMENT)
-                .multiplied(Orientation.getRotationMatrix(EXTRINSIC, YZX, DEGREES,
-                        CAMERA_CHOICE == FRONT ? 90 : -90, 0, 0));
+                .multiplied(Orientation.getRotationMatrix(AxesReference.EXTRINSIC, AxesOrder.XZY,AngleUnit.DEGREES,
+                        90, 90, 0));
 
         for (VuforiaTrackable trackable : allTrackables)
         {
@@ -182,6 +192,8 @@ public class GoldAlignCam extends OpMode
         detector.areaScoringMethod = DogeCV.AreaScoringMethod.MAX_AREA; // Can also be PERFECT_AREA
         //detector.perfectAreaScorer.perfectArea = 10000; // if using PERFECT_AREA scoring
         detector.downscale = 0.8;
+        detector.alignPosOffset = 0;
+        detector.alignSize = 40;
 
         // Set the detector
         vuforia.setDogeCVDetector(detector);
@@ -241,6 +253,13 @@ public class GoldAlignCam extends OpMode
         }
         else {
             telemetry.addData("Visible Target", "none");
+        }
+
+
+            telemetry.addData("Cube Found: ", detector.isFound());
+        if(detector.isFound()){
+            telemetry.addData("Cube X: ", detector.getXPosition());
+            telemetry.addData("Cube in Margin: ", detector.getAligned());
         }
 
 

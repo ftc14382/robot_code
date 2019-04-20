@@ -34,6 +34,7 @@ import com.disnodeteam.dogecv.DogeCV;
 import com.disnodeteam.dogecv.Dogeforia;
 import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -98,9 +99,9 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
  * is explained below.
  */
 
-@Autonomous(name="LandBlueLeftCV", group ="NewDogeCV")
-//@Disabled
-public class NewABLWithLanding extends LinearOpMode {
+@Autonomous(name="TestLand", group ="NewDogeCV")
+@Disabled
+public class LandingTest extends LinearOpMode {
 public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
 
@@ -434,8 +435,10 @@ public static final String Tag = "OurLog";
         RobotInfo robotInfo = new RobotInfo();
 
 
+        raiseTo(-460);
 
-        robot.lifter.setPower(0.95);
+
+        /*robot.lifter.setPower(0.95);
         robot.extender.setPower(-0.03);
         sleep(1000);
         robot.lifter.setPower(0.05);
@@ -455,7 +458,7 @@ public static final String Tag = "OurLog";
         encoderDrive(TURN_SPEED, -4, 4, 2);
         encoderDrive(DRIVE_SPEED, 3, 3, 2);
         encoderDrive(TURN_SPEED, degreesToInches(-90), degreesToInches(90), 4);
-        encoderDrive(DRIVE_SPEED, 5, 5, 4);
+        encoderDrive(DRIVE_SPEED, 5, 5, 4);*/
 
 
 
@@ -697,7 +700,7 @@ public static final String Tag = "OurLog";
 
 
         }
-        robot.extender.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        robot.extender.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     /*

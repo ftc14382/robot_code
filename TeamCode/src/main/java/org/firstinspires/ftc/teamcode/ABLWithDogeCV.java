@@ -197,6 +197,11 @@ public static final String Tag = "OurLog";
 double startIMUAngle;
 double currentIMUAngle;
 double startIMUOfset;
+    double distanceDifference;
+
+    double firstReading;
+    double secondReading;
+    double thirdReading;
 
     @Override public void runOpMode() {
         webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
@@ -784,7 +789,11 @@ if (false) {
         telemetry.update();//End Viuforia
         //sleep(10000);
         turnTo(robotInfo, cube1);
+        robot.lifter.setPower(0.96);//Colapse lifter
+        robot.extender.setPower(-0.03);//Colapse lifter
         sleep(1500);//2000
+        robot.lifter.setPower(0);//Stop Colapse lifter
+        robot.extender.setPower(0.0);//Stop Colapse lifter
         RobotLog.ii(Tag, "sampling: x position: %.2f", detector.getXPosition());
         if(detector.getAligned()) {
             driveTo(robotInfo, cube1, true);
@@ -830,12 +839,60 @@ if (false) {
             /*driveTo(robotInfo, depoTransfer, true);
             driveTo(robotInfo, transfer, true);
             driveTo(robotInfo, crater, false);*/
+
+            if(false) {//start wall following
+                RobotLog.ii(Tag, "Before: front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
+                while ((runtime.seconds() < 5) && opModeIsActive()) {
+                    RobotLog.ii(Tag, "front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
+                    distanceDifference = robot.sensorBackLeft.getDistance(DistanceUnit.INCH) - robot.sensorFrontLeft.getDistance(DistanceUnit.INCH);
+                    if (distanceDifference < 1) {//get the right distance away from the wall
+                        distanceDifference = robot.sensorFrontLeft.getDistance(DistanceUnit.INCH) - 5;
+                        distanceDifference = distanceDifference * 0.1;
+                        robot.leftDrive.setPower(0.5);
+                        robot.rightDrive.setPower(0.5 + distanceDifference);
+                    } else {//straighten out
+                        distanceDifference = distanceDifference * 0.1;
+                        robot.leftDrive.setPower(0.5 + distanceDifference);
+                        robot.rightDrive.setPower(0.5);
+                    }
+
+                    if (robot.sensorFront.getDistance(DistanceUnit.INCH) < 51) {//This is the wall follower
+                        firstReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
+                        secondReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
+                        thirdReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
+
+                        if (Math.abs(secondReading - firstReading) < 1.5) {
+                            if ((firstReading < 51) && (firstReading > 47)) {
+                                RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
+                                break;
+                            }
+                        } else if (Math.abs(thirdReading - secondReading) < 1.5) {
+                            if ((secondReading < 51) && (secondReading > 47)) {
+                                RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
+                                break;
+                            }
+                        } else if (Math.abs(firstReading - thirdReading) < 1.5) {
+                            if ((thirdReading < 51) && (thirdReading > 47)) {
+                                RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }//This is the end of the wall follower
+
+
         } else {
             turnTo(robotInfo, cornerDepo);
 
-            robot.arm.setPower(0.3);
-            sleep(1500);
+            robot.arm.setPower(-0.85);
+            sleep(370);
             robot.arm.setPower(0);
+            robot.grabber1.setPower(0.5);
+            robot.grabber2.setPower(0.5);
+            sleep(1100);
+            robot.grabber1.setPower(0.0);
+            robot.grabber2.setPower(0.0);
         }
 
 
@@ -977,8 +1034,9 @@ if (false) {
 
     public void raiseArm () {
         robot.arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        robot.arm.setPower(0.85);
+        robot.arm.setPower(-0.85);
         sleep(600);
+        robot.arm.setPower(0.0);
     }
 
     public void raiseTo(int position) {

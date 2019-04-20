@@ -50,7 +50,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Lifter Arcade Drive", group="Linear Opmode")
+@TeleOp(name="3 Wheel Drive", group="Linear Opmode")
 //@Disabled
 public class HolonomiclDriving extends LinearOpMode {
 

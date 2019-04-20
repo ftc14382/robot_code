@@ -113,6 +113,7 @@ public class LinearLifter extends LinearOpMode {
         colapser.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+
         //basearm.setDirection(DcMotor.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -129,6 +130,7 @@ public class LinearLifter extends LinearOpMode {
         double armPower = 0;
         double markerPower = 0;
         int startPosition = extender2.getCurrentPosition();
+        int armStartPosition = arm.getCurrentPosition();
 
 
         //double grabberPower;
@@ -213,13 +215,49 @@ public class LinearLifter extends LinearOpMode {
             }
 
             if(gamepad2.left_bumper) {
+                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
                 armPower = 0;
             } else if(gamepad2.a && (gamepad2.x == FALSE))  {
-                armPower = -0.35;
+                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                armPower = -0.65 * armSpeedChange;
             } else if(gamepad2.y && (gamepad2.b == FALSE)) {
-                armPower = 0.35;
+                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                armPower = 0.65 * armSpeedChange;
+            } else if((gamepad2.left_bumper == FALSE) && gamepad2.right_stick_button) {//if you press the button, the arm should go to its starting position
+                if(arm.getCurrentPosition() != armStartPosition) {
+                    arm.setTargetPosition(armStartPosition);
+                    arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    arm.setPower(0.9);
+                } else {
+                    arm.setPower(0.0);
+                    arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                }
+            } else if((gamepad2.left_bumper == FALSE) && gamepad2.right_stick_y < -0.6) {
+                if(arm.getCurrentPosition() != armStartPosition + -177) {
+                    arm.setTargetPosition(armStartPosition + -177);
+                    arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    arm.setPower(0.9);
+                } else {
+                    arm.setPower(0.0);
+                    arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                }
+            } else if((gamepad2.left_bumper == FALSE) && gamepad2.right_stick_y > 0.6) {
+                if(arm.getCurrentPosition() != armStartPosition + -515) {
+                    arm.setTargetPosition(armStartPosition + -515);
+                    arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    arm.setPower(0.9);
+                } else {
+                    arm.setPower(0.0);
+                    arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                }
             } else {
-                armPower = gamepad2.left_stick_y * 0.5 * armSpeedChange;
+                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                armPower = gamepad2.left_stick_y * 0.8 * armSpeedChange;
+            }
+
+
+            if(gamepad2.left_trigger > 0.89) {
+                armStartPosition = arm.getCurrentPosition();//reset start arm position
             }
 
 
@@ -256,17 +294,17 @@ public class LinearLifter extends LinearOpMode {
                     grabberPowerR = 0.0;
                 }
             } else if(gamepad2.x && (gamepad2.a == FALSE)) {//grab something
-                grabberPowerL = 0.6 * armSpeedChange;
-                grabberPowerR = 0.6 * armSpeedChange;
+                grabberPowerL = 0.4 * armSpeedChange;
+                grabberPowerR = 0.4 * armSpeedChange;
             } else if(gamepad2.b && (gamepad2.y == FALSE)) {//release something
-                grabberPowerR = -0.6 * armSpeedChange;
-                grabberPowerL = -0.6 * armSpeedChange;
+                grabberPowerR = -0.4 * armSpeedChange;
+                grabberPowerL = -0.4 * armSpeedChange;
             } else if(gamepad2.dpad_right) {//grab something
-                grabberPowerR = 0.6 * armSpeedChange;
-                grabberPowerL = 0.6 * armSpeedChange;
+                grabberPowerR = 0.4 * armSpeedChange;
+                grabberPowerL = 0.4 * armSpeedChange;
             } else if(gamepad2.dpad_left) {//release something
-                grabberPowerR = -0.6 * armSpeedChange;
-                grabberPowerL = -0.6 * armSpeedChange;
+                grabberPowerR = -0.4 * armSpeedChange;
+                grabberPowerL = -0.4 * armSpeedChange;
             }  else {//no movement
                 grabberPowerL = 0.0;
                 grabberPowerR = 0.0;
@@ -286,7 +324,9 @@ public class LinearLifter extends LinearOpMode {
             //midarm.setPower(midarmPower);
             colapser.setPower(colapsePower);
             extender2.setPower(extendPower);
-            arm.setPower(armPower);
+            if (arm.isBusy() == FALSE) {//If it is not using the encoders set the power as normal
+                arm.setPower(armPower);
+            }
             marker.setPower(markerPower);
             leftGrabber.setPower(grabberPowerL);
             rightGrabber.setPower(grabberPowerR);
@@ -294,6 +334,7 @@ public class LinearLifter extends LinearOpMode {
             grabber2.setPower(grabberPower);*/
             //basearm.setPower(basearmPower);
             // Show the elapsed game time and wheel power.
+            telemetry.addData("Arm", "position (%d)", arm.getCurrentPosition() - armStartPosition);
             telemetry.addData("Lifter", "lifter" + colapsePower);
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);

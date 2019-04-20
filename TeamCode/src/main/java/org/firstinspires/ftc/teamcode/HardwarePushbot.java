@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -120,7 +121,7 @@ public class HardwarePushbot
         lifter.setDirection(DcMotor.Direction.FORWARD);
         arm.setDirection(DcMotor.Direction.FORWARD);
         grabber1.setDirection(CRServo.Direction.FORWARD);
-        grabber2.setDirection(CRServo.Direction.FORWARD);
+        grabber2.setDirection(CRServo.Direction.REVERSE);
         // Set all motors to zero power
         leftDrive.setPower(0.0);
         rightDrive.setPower(0);
@@ -139,6 +140,7 @@ public class HardwarePushbot
         //leftArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         extender.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
+
         // Define and initialize ALL installed servos.
         //leftClaw  = hwMap.get(Servo.class, "left_hand");
         //rightClaw = hwMap.get(Servo.class, "right_hand");
@@ -147,6 +149,8 @@ public class HardwarePushbot
 
         leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.FLOAT);//set brake mode
         rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
     }
  }
 
