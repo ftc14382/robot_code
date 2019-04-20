@@ -159,6 +159,7 @@ public static final String Tag = "OurLog";
     private Position crater = new Position();
     private Position transfer = new Position();
     private Position depoTransfer = new Position();
+    private Position cube1SetUp = new Position();
     private Position cube1 = new Position();
     private Position cube2 = new Position();
     private Position cube3 = new Position();
@@ -248,6 +249,9 @@ double startIMUOfset;
                 cornerDepo.x = 72;
                 cornerDepo.y = 72;
 
+                cube1SetUp.x = 17;
+                cube1SetUp.y = 20;
+
                 cube1.x = 24.5;//25.5
                 cube1.y = 46.5;//45.5
                 cube1Found.x = 27;
@@ -305,6 +309,9 @@ double startIMUOfset;
             } else {
                 cornerDepo.x = -72;
                 cornerDepo.y = -72;
+
+                cube1SetUp.x = -17;
+                cube1SetUp.y = -20;
 
                 cube1.x = -24.5;//25.5
                 cube1.y = -46.5;//45.5
@@ -796,6 +803,9 @@ if (false) {
         robot.extender.setPower(0.0);//Stop Colapse lifter
         RobotLog.ii(Tag, "sampling: x position: %.2f", detector.getXPosition());
         if(detector.getAligned()) {
+            if(startQuad == Quad.BLUE_RIGHT  || startQuad == Quad.RED_RIGHT) {
+                driveTo(robotInfo, cube1SetUp, true);
+            }
             driveTo(robotInfo, cube1, true);
             if (startQuad == Quad.RED_LEFT||startQuad == Quad.BLUE_LEFT) {
             driveTo(robotInfo, cube1Found, true);
