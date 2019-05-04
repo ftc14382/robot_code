@@ -535,43 +535,7 @@ double thirdReading;
         runtime.reset();
         RobotInfo robotInfo = new RobotInfo();
         RobotLog.ii(Tag, "Before: front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
-        while((runtime.seconds() < 5) && opModeIsActive()) {
-            RobotLog.ii(Tag, "front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
-            distanceDifference = robot.sensorBackLeft.getDistance(DistanceUnit.INCH) - robot.sensorFrontLeft.getDistance(DistanceUnit.INCH);
-            if(distanceDifference < 1) {//get the right distance away from the wall
-                distanceDifference = robot.sensorFrontLeft.getDistance(DistanceUnit.INCH) - 5;
-                distanceDifference = distanceDifference * 0.1;
-                robot.leftDrive.setPower(0.5);
-                robot.rightDrive.setPower(0.5 + distanceDifference);
-            } else {//straighten out
-                distanceDifference = distanceDifference * 0.1;
-                robot.leftDrive.setPower(0.5 + distanceDifference);
-                robot.rightDrive.setPower(0.5);
-            }
 
-            if(robot.sensorFront.getDistance(DistanceUnit.INCH) < 51) {
-                firstReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
-                secondReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
-                thirdReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
-
-                if(Math.abs(secondReading - firstReading) < 1.5) {
-                    if((firstReading < 51) && (firstReading > 47)) {
-                            RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
-                            break;
-                    }
-                } else if(Math.abs(thirdReading - secondReading) < 1.5) {
-                    if((secondReading < 51) && (secondReading > 47)) {
-                        RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
-                        break;
-                    }
-                } else if(Math.abs(firstReading - thirdReading) < 1.5) {
-                    if((thirdReading < 51) && (thirdReading > 47)) {
-                        RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
-                        break;
-                    }
-                }
-            }
-        }
         RobotLog.ii(Tag, "Outside:front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
         robot.rightDrive.setPower(0.0);
         robot.leftDrive.setPower(0.0);

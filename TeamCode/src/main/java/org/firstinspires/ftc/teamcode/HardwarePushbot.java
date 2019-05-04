@@ -29,10 +29,11 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -58,18 +59,21 @@ public class HardwarePushbot
     /* Public OpMode members. */
     public DcMotor  leftDrive   = null;
     public DcMotor  rightDrive  = null;
-    public CRServo marker = null;
-    public DcMotor extender = null;
-    public DcMotor lifter = null;
-    public DcMotor arm = null;
-    public CRServo grabber1 = null;
-    public CRServo grabber2 = null;
 
+
+    public DcMotor extender;
+    public DcMotor lifter;
+    public DcMotor arm;
+    public CRServo marker;
+    public CRServo grabber1;
+    public CRServo grabber2;
+
+    public BNO055IMU imu;
 
 
     public DistanceSensor sensorFront;//set up distance sensor
-    public DistanceSensor sensorFrontLeft;
-    public DistanceSensor sensorBackLeft;
+    public DistanceSensor sensorLeft;
+    public DistanceSensor sensorRight;
 
     //public DcMotor  leftArm     = null;
     //public Servo    leftClaw    = null;
@@ -94,43 +98,28 @@ public class HardwarePushbot
         hwMap = ahwMap;
 
         // Define and Initialize Motors
-        leftDrive  = hwMap.get(DcMotor.class, "left_drive");
-        rightDrive = hwMap.get(DcMotor.class, "right_drive");
-        marker = hwMap.get(CRServo.class, "marker");
-        //leftArm    = hwMap.get(DcMotor.class, "left_arm");
-        extender = hwMap.get(DcMotor.class, "lifter2");
-        lifter = hwMap.get(DcMotor.class, "lifter");
-        arm = hwMap.get(DcMotor.class, "arm");
-        grabber1 = hwMap.get(CRServo.class,  "grabber1");
-        grabber2 = hwMap.get(CRServo.class,  "grabber2");
-        sensorFront = hwMap.get(DistanceSensor.class, "sensor_front");
-        sensorFrontLeft = hwMap.get(DistanceSensor.class, "sensor_FL");
-        sensorBackLeft = hwMap.get(DistanceSensor.class, "sensor_BL");
+        leftDrive  = hwMap.get(DcMotor.class, "driveleft");
+        rightDrive = hwMap.get(DcMotor.class, "driveright");
+
+
+        sensorFront = hwMap.get(DistanceSensor.class, "distfront");
+        sensorLeft = hwMap.get(DistanceSensor.class, "distleft");
+        sensorRight = hwMap.get(DistanceSensor.class, "distright");
         // you can also cast this to a Rev2mDistanceSensor if you want to use added
         // methods associated with the Rev2mDistanceSensor class.
         Rev2mDistanceSensor sensorTimeOfFlightF = (Rev2mDistanceSensor)sensorFront;
-        Rev2mDistanceSensor sensorTimeOfFlightFL = (Rev2mDistanceSensor)sensorFrontLeft;
-        Rev2mDistanceSensor sensorTimeOfFlightBL = (Rev2mDistanceSensor)sensorBackLeft;
+        Rev2mDistanceSensor sensorTimeOfFlightR = (Rev2mDistanceSensor)sensorRight;
+        Rev2mDistanceSensor sensorTimeOfFlightL = (Rev2mDistanceSensor)sensorLeft;
 
 
 
-        leftDrive.setDirection(DcMotor.Direction.REVERSE); // Set to REVERSE if using AndyMark motors
+        leftDrive.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
         rightDrive.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
-        marker.setDirection(CRServo.Direction.FORWARD);
-        extender.setDirection(DcMotor.Direction.FORWARD);
-        lifter.setDirection(DcMotor.Direction.FORWARD);
-        arm.setDirection(DcMotor.Direction.FORWARD);
-        grabber1.setDirection(CRServo.Direction.FORWARD);
-        grabber2.setDirection(CRServo.Direction.REVERSE);
+
         // Set all motors to zero power
         leftDrive.setPower(0.0);
         rightDrive.setPower(0);
-        marker.setPower(0);
-        extender.setPower(0);
-        lifter.setPower(0);
-        arm.setPower(0);
-        grabber1.setPower(0);
-        grabber2.setPower(0);
+
         //leftArm.setPower(0);
 
         // Set all motors to run without encoders.
@@ -138,7 +127,7 @@ public class HardwarePushbot
         leftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         //leftArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        extender.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
 
 
         // Define and initialize ALL installed servos.
@@ -149,8 +138,23 @@ public class HardwarePushbot
 
         leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.FLOAT);//set brake mode
         rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        // Set up the parameters with which we will use our IMU. Note that integration
+        // algorithm here just reports accelerations to the logcat log; it doesn't actually
+        // provide positional information.
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.angleUnit            = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit            = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.calibrationDataFile  = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters.loggingEnabled       = true;
+        parameters.loggingTag           = "IMU";
+        parameters.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+
+        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        imu = hwMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
     }
  }
 

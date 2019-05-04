@@ -36,6 +36,7 @@ import com.disnodeteam.dogecv.detectors.roverrukus.GoldAlignDetector;
 import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -103,7 +104,7 @@ import static org.firstinspires.ftc.robotcore.external.navigation.AxesReference.
  */
 
 @Autonomous(name="BlueLeftCV", group ="NewDogeCV")
-//@Disabled
+@Disabled
 public class ABLWithDogeCV extends LinearOpMode {
 public static final String Tag = "OurLog";
     HardwarePushbot robot       = new HardwarePushbot();
@@ -563,14 +564,7 @@ double startIMUOfset;
         RobotInfo robotInfo = new RobotInfo();
 
 
-        robot.lifter.setPower(0.99);//95
-        robot.extender.setPower(-0.09);
-        sleep(1300);//900
-        robot.lifter.setPower(-0.05);
-        robot.extender.setPower(0.6);
-        sleep(3800);
-        robot.lifter.setPower(0);
-        robot.extender.setPower(0);
+
 if (false) {
     raiseTo(-416);
     encoderDrive(DRIVE_SPEED, 3, 3, 1);
@@ -850,46 +844,7 @@ if (false) {
             driveTo(robotInfo, transfer, true);
             driveTo(robotInfo, crater, false);*/
 
-            if(false) {//start wall following
-                RobotLog.ii(Tag, "Before: front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
-                while ((runtime.seconds() < 5) && opModeIsActive()) {
-                    RobotLog.ii(Tag, "front sensor: value: %.2f", robot.sensorFront.getDistance(DistanceUnit.INCH));
-                    distanceDifference = robot.sensorBackLeft.getDistance(DistanceUnit.INCH) - robot.sensorFrontLeft.getDistance(DistanceUnit.INCH);
-                    if (distanceDifference < 1) {//get the right distance away from the wall
-                        distanceDifference = robot.sensorFrontLeft.getDistance(DistanceUnit.INCH) - 5;
-                        distanceDifference = distanceDifference * 0.1;
-                        robot.leftDrive.setPower(0.5);
-                        robot.rightDrive.setPower(0.5 + distanceDifference);
-                    } else {//straighten out
-                        distanceDifference = distanceDifference * 0.1;
-                        robot.leftDrive.setPower(0.5 + distanceDifference);
-                        robot.rightDrive.setPower(0.5);
-                    }
 
-                    if (robot.sensorFront.getDistance(DistanceUnit.INCH) < 51) {//This is the wall follower
-                        firstReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
-                        secondReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
-                        thirdReading = robot.sensorFront.getDistance(DistanceUnit.INCH);
-
-                        if (Math.abs(secondReading - firstReading) < 1.5) {
-                            if ((firstReading < 51) && (firstReading > 47)) {
-                                RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
-                                break;
-                            }
-                        } else if (Math.abs(thirdReading - secondReading) < 1.5) {
-                            if ((secondReading < 51) && (secondReading > 47)) {
-                                RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
-                                break;
-                            }
-                        } else if (Math.abs(firstReading - thirdReading) < 1.5) {
-                            if ((thirdReading < 51) && (thirdReading > 47)) {
-                                RobotLog.ii(Tag, "wall follower: break because of distance: %.2f", firstReading);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }//This is the end of the wall follower
 
 
         } else {

@@ -31,13 +31,18 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
+import org.firstinspires.ftc.robotcore.external.navigation.Acceleration;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+
+import java.util.Locale;
 
 
 /**
@@ -61,90 +66,50 @@ public class LinearLifter extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor leftDrive = null;
     private DcMotor rightDrive = null;
-    //private DcMotor midarm = null;
-    private DcMotor colapser = null;
-    private DcMotor extender2 = null;
-    private DcMotor arm = null;
 
-    private CRServo marker = null;
-    private CRServo leftGrabber = null;//left grabber when arm is in the crater
-    private CRServo rightGrabber = null;//right grabber when arm is in the crater
+    Orientation angles;
+    Acceleration gravity;
+    Double  distanceFront;
+    Double  distanceRight;
+    Double  distanceLeft;
 
-    /*private CRServo grabber1 = null;
-    private CRServo grabber2 = null;*/
-    //private DcMotor basearm = null;
+    HardwarePushbot robot;
+
+
     @Override
     public void runOpMode() {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        robot = new HardwarePushbot();
+        robot.init(hardwareMap);
+
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
 
-        leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
-        rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
-        //midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
-        colapser = hardwareMap.get(DcMotor.class, "lifter");
-        extender2 = hardwareMap.get(DcMotor.class, "lifter2");
-        arm = hardwareMap.get(DcMotor.class, "arm");
+        //leftDrive  = hardwareMap.get(DcMotor.class, "driveleft");
+        //rightDrive = hardwareMap.get(DcMotor.class, "driveright");
 
-        marker = hardwareMap.get(CRServo.class, "marker");
-        leftGrabber = hardwareMap.get(CRServo.class,  "grabber1");
-        rightGrabber = hardwareMap.get(CRServo.class,  "grabber2");
-        //basearm = hardwareMap.get(DcMotor.class, "base_arm");
-
-        // Most robots need the motor on one side to be reversed to drive forward
-        // Reverse the motor that runs backwards when connected directly to the battery
-
-        leftDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightDrive.setDirection(DcMotor.Direction.REVERSE);
-        //midarm.setDirection(DcMotor.Direction.FORWARD);
-        colapser.setDirection(DcMotor.Direction.FORWARD);
-        extender2.setDirection(DcMotor.Direction.FORWARD);
-        arm.setDirection(DcMotor.Direction.FORWARD);
-        marker.setDirection(CRServo.Direction.FORWARD);
-        leftGrabber.setDirection(CRServo.Direction.FORWARD);
-        rightGrabber.setDirection(CRServo.Direction.REVERSE);
-
-        leftDrive.setZeroPowerBehavior( DcMotor.ZeroPowerBehavior.BRAKE);
-        rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        extender2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        colapser.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-        //basearm.setDirection(DcMotor.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
         double leftPower = 0;
         double rightPower = 0;
+        double drive;
         double turn;
-        double speedChange;//driving
-        double armSpeedChange;//midarm
+        double speedChange = 0.0;//driving
+
         double grabberPowerL = 0.0;
         double grabberPowerR = 0.0;
         double colapsePower = 0;
         double extendPower = 0;
         double armPower = 0;
         double markerPower = 0;
-        int startPosition = extender2.getCurrentPosition();
-        int armStartPosition = arm.getCurrentPosition();
 
 
-        //double grabberPower;
-        //int starPositionArm = midarm.getCurrentPosition();
-        //int currentPositionArm = starPositionArm - midarm.getCurrentPosition();
-        //int targetPositionArm;
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-
-            // Setup a variable for each drive wheel to save power level for telemetry
-            //double leftPower;
-            //double rightPower;
-            //double midarmPower;
-            //double basearmPower;
 
 
             // Choose to drive using either Tank Mode, or POV Mode
@@ -152,201 +117,57 @@ public class LinearLifter extends LinearOpMode {
 
             // POV Mode uses left stick to go forward, and right stick to turn.
             // - This uses basic math to combine motions and is easier to drive straight.
-            //double drive = -gamepad1.left_stick_y;
-           // double turn  =  gamepad1.right_stick_x;
-           // leftPower    = Range.clip(drive + turn, -1.0, 1.0) ;
-            //rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
+            drive =  gamepad1.left_stick_y;
+            turn  =  gamepad1.left_stick_x;
 
-            speedChange = 1-(gamepad1.right_trigger * 0.8);
-            if(gamepad1.x) {//turn right
-                leftPower = 1 * speedChange;
-                rightPower = -1 * speedChange;
-            } else if(gamepad1.b) {//turn left
-                leftPower = -1 * speedChange;
-                rightPower = 1 * speedChange;
-            } else if(gamepad1.y) {//drive backwards
-                leftPower = -1 * speedChange;
-                rightPower = -1 * speedChange;
-            } else if(gamepad1.a) {//drive forward
-                leftPower = 1 * speedChange;
-                rightPower = 1 * speedChange;
-            } else if(gamepad1.left_bumper) {//individually control the left wheel
-                if(gamepad1.dpad_up) {
-                    leftPower = 0.1 * speedChange;
-                } else if(gamepad1.dpad_down) {
-                    leftPower = -0.1 * speedChange;
-                } else {
-                    leftPower = 0;
-                }
-            } else if(gamepad1.right_bumper) {//individually control the right wheel
-                if(gamepad1.dpad_up) {
-                    rightPower = 0.1 * speedChange;
-                } else if(gamepad1.dpad_down) {
-                    rightPower = -0.1 * speedChange;
-                } else {
-                    rightPower = 0;
-                }
-            } else if(gamepad1.left_stick_y != 0 || gamepad1.left_stick_x != 0){//use the left stick to drive fast
-                turn = gamepad1.left_stick_x;
-                leftPower  = (gamepad1.left_stick_y - turn) * speedChange ;
-                rightPower = (gamepad1.left_stick_y + turn) * speedChange;
-            } else {//use the right sick to drive slow
-                turn = gamepad1.right_stick_x;
-                leftPower  = (gamepad1.right_stick_y - turn) * speedChange * 0.5;
-                rightPower = (gamepad1.right_stick_y + turn) * speedChange * 0.5;
+            if (Math.abs(turn) < 0.02) {
+                turn = 0.0;
+            }
+
+            if (Math.abs(drive) < 0.02) {
+                drive = 0.0;
             }
 
 
-            //midarm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            armSpeedChange = 1-(gamepad2.right_trigger * 0.4);
-            if (gamepad2.b && gamepad2.y) {
-                colapsePower = -0.8 * armSpeedChange; //colapsePower = 0.32;//for lowering
-                extendPower = 0.9 * armSpeedChange;//extendPower = -0.99;
-            } else if(gamepad2.x && gamepad2.a){
-                colapsePower = 1 * armSpeedChange;//colapsePower = -0.32;//for raising
-                extendPower = -0.01 * armSpeedChange;//extendPower = 0.99;
-            } else if(gamepad2.left_bumper){//individually control the two lifting motors
-                colapsePower = gamepad2.right_stick_y;
-                extendPower = gamepad2.left_stick_y;
-            } else {
-                colapsePower = 0;
-                extendPower = 0;
-            }
-
-            if(gamepad2.left_bumper) {
-                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                armPower = 0;
-            } else if(gamepad2.a && (gamepad2.x == FALSE))  {
-                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                armPower = -0.65 * armSpeedChange;
-            } else if(gamepad2.y && (gamepad2.b == FALSE)) {
-                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                armPower = 0.65 * armSpeedChange;
-            } else if((gamepad2.left_bumper == FALSE) && gamepad2.right_stick_button) {//if you press the button, the arm should go to its starting position
-                if(arm.getCurrentPosition() != armStartPosition) {
-                    arm.setTargetPosition(armStartPosition);
-                    arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    arm.setPower(0.9);
-                } else {
-                    arm.setPower(0.0);
-                    arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                }
-            } else if((gamepad2.left_bumper == FALSE) && gamepad2.right_stick_y < -0.6) {
-                if(arm.getCurrentPosition() != armStartPosition + -177) {
-                    arm.setTargetPosition(armStartPosition + -177);
-                    arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    arm.setPower(0.9);
-                } else {
-                    arm.setPower(0.0);
-                    arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                }
-            } else if((gamepad2.left_bumper == FALSE) && gamepad2.right_stick_y > 0.6) {
-                if(arm.getCurrentPosition() != armStartPosition + -515) {
-                    arm.setTargetPosition(armStartPosition + -515);
-                    arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    arm.setPower(0.9);
-                } else {
-                    arm.setPower(0.0);
-                    arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                }
-            } else {
-                arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                armPower = gamepad2.left_stick_y * 0.8 * armSpeedChange;
-            }
+            leftPower    = Range.clip(drive - turn, -1.0, 1.0) ;
+            rightPower   = Range.clip(drive + turn, -1.0, 1.0) ;
 
 
-            if(gamepad2.left_trigger > 0.89) {
-                armStartPosition = arm.getCurrentPosition();//reset start arm position
-            }
-
-
-            if(gamepad2.dpad_up) {
-                markerPower = -0.6 * armSpeedChange;
-            } else if(gamepad2.dpad_down) {
-                markerPower = 0.6 * armSpeedChange;
-            } else {
-                markerPower = 0;
-            }
-
-
-
-                //midarmPower=(0.8 * gamepad2.left_stick_y) * armSpeedChange;//*0.5
-
-
-
-
-            if(gamepad2.right_bumper) {//for individual grabber movement
-                if(gamepad2.x) {
-                    grabberPowerR = 0.3 * armSpeedChange;
-                    grabberPowerL = 0.0 * armSpeedChange;
-                } else if(gamepad2.b) {
-                    grabberPowerR = -0.3 * armSpeedChange;
-                    grabberPowerL = 0.0 * armSpeedChange;
-                } else if(gamepad2.dpad_left) {
-                    grabberPowerL = -0.3 * armSpeedChange;
-                    grabberPowerR = 0.0 * armSpeedChange;
-                } else if(gamepad2.dpad_right) {
-                    grabberPowerL = 0.3 * armSpeedChange;
-                    grabberPowerR = 0.0 * armSpeedChange;
-                } else {
-                    grabberPowerL = 0.0;
-                    grabberPowerR = 0.0;
-                }
-            } else if(gamepad2.x && (gamepad2.a == FALSE)) {//grab something
-                grabberPowerL = 0.4 * armSpeedChange;
-                grabberPowerR = 0.4 * armSpeedChange;
-            } else if(gamepad2.b && (gamepad2.y == FALSE)) {//release something
-                grabberPowerR = -0.4 * armSpeedChange;
-                grabberPowerL = -0.4 * armSpeedChange;
-            } else if(gamepad2.dpad_right) {//grab something
-                grabberPowerR = 0.4 * armSpeedChange;
-                grabberPowerL = 0.4 * armSpeedChange;
-            } else if(gamepad2.dpad_left) {//release something
-                grabberPowerR = -0.4 * armSpeedChange;
-                grabberPowerL = -0.4 * armSpeedChange;
-            }  else {//no movement
-                grabberPowerL = 0.0;
-                grabberPowerR = 0.0;
-            }
-
-
-
-
-
-
-
-
+            angles   = robot.imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
+            gravity  = robot.imu.getGravity();
+            distanceFront = robot.sensorFront.getDistance(DistanceUnit.INCH);
+            distanceRight = robot.sensorRight.getDistance(DistanceUnit.INCH);
+            distanceLeft  = robot.sensorLeft.getDistance(DistanceUnit.INCH);
 
             // Send calculated power to wheels
-            leftDrive.setPower(leftPower);
-            rightDrive.setPower(rightPower);
+            robot.leftDrive.setPower(leftPower);
+            robot.rightDrive.setPower(-1.0 * rightPower);
             //midarm.setPower(midarmPower);
-            colapser.setPower(colapsePower);
-            extender2.setPower(extendPower);
-            if (arm.isBusy() == FALSE) {//If it is not using the encoders set the power as normal
-                arm.setPower(armPower);
-            }
-            marker.setPower(markerPower);
-            leftGrabber.setPower(grabberPowerL);
-            rightGrabber.setPower(grabberPowerR);
-            /*grabber1.setPower(grabberPower);
-            grabber2.setPower(grabberPower);*/
-            //basearm.setPower(basearmPower);
-            // Show the elapsed game time and wheel power.
-            telemetry.addData("Arm", "position (%d)", arm.getCurrentPosition() - armStartPosition);
-            telemetry.addData("Lifter", "lifter" + colapsePower);
+
+
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motors", "left (%.2f), right (%.2f)", leftPower, rightPower);
-            telemetry.addData("Arm", "power (%.2f)", armPower);
-            telemetry.addData("Extender", "Position (%d)", startPosition - extender2.getCurrentPosition());
-            telemetry.addData("Marker", "power (%.2f)", markerPower);
-            //telemetry.addData("MotosArm", "mid (%.2f)", midarmPower);
-            //telemetry.addData("Grabber Power", "mid (%.2f)", grabberPower);
-            telemetry.addData("Drive", "Change: (%.2f)", speedChange);
-            /*telemetry.addData("Left", "click(%d)", leftDrive.getCurrentPosition());
-            telemetry.addData("Right","click(%d)", rightDrive.getCurrentPosition());*/
+
+            telemetry.addData("Gamepad1:", "%s",gamepad1.toString());
+
+            telemetry.addLine().addData("Heading: ", "%s", formatAngle(angles.angleUnit, angles.firstAngle))
+                    .addData("Roll:", "%s", formatAngle(angles.angleUnit, angles.secondAngle))
+                    .addData("Pitch:", "%s", formatAngle(angles.angleUnit, angles.thirdAngle));
+
+            telemetry.addLine()
+                    .addData("distance (l,f,r)", "(%.3f, %.3f, %.3f)",
+                                    distanceLeft, distanceFront, distanceRight);
+
+
             telemetry.update();
         }
+    }
+
+    String formatAngle(AngleUnit angleUnit, double angle) {
+        return formatDegrees(AngleUnit.DEGREES.fromUnit(angleUnit, angle));
+    }
+
+    String formatDegrees(double degrees){
+        return String.format(Locale.getDefault(), "%.1f", AngleUnit.DEGREES.normalize(degrees));
     }
 }
