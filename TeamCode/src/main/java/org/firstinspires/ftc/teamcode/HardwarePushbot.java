@@ -56,10 +56,20 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  */
 public class HardwarePushbot
 {
+    static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    static final double     DRIVE_GEAR_REDUCTION    = 1.0 ;     // This is < 1.0 if geared UP
+    static final double     WHEEL_DIAMETER_INCHES   = 3.5 ;//was 4     // For figuring circumference!!!!!!!!!!!!!!!!!!!!!!!!!!
+    static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+    static final double     DRIVE_SPEED             = 0.6;
+    static final double     TURN_SPEED              = 0.3;//was 0.4
+
+
+    public Camsensor   webcam;
+
     /* Public OpMode members. */
     public DcMotor  leftDrive   = null;
     public DcMotor  rightDrive  = null;
-
 
     public DcMotor extender;
     public DcMotor lifter;
@@ -70,20 +80,10 @@ public class HardwarePushbot
 
     public BNO055IMU imu;
 
-
     public DistanceSensor sensorFront;//set up distance sensor
     public DistanceSensor sensorLeft;
     public DistanceSensor sensorRight;
 
-    //public DcMotor  leftArm     = null;
-    //public Servo    leftClaw    = null;
-    //public Servo    rightClaw   = null;
-
-    //public static final double MID_SERVO       =  0.5 ;
-    //public static final double ARM_UP_POWER    =  0.45 ;
-    //public static final double ARM_DOWN_POWER  = -0.45 ;
-
-    /* local OpMode members. */
     HardwareMap hwMap           =  null;
     private ElapsedTime period  = new ElapsedTime();
 
@@ -97,21 +97,20 @@ public class HardwarePushbot
         // Save reference to Hardware map
         hwMap = ahwMap;
 
+
+
         // Define and Initialize Motors
         leftDrive  = hwMap.get(DcMotor.class, "driveleft");
         rightDrive = hwMap.get(DcMotor.class, "driveright");
 
-
         sensorFront = hwMap.get(DistanceSensor.class, "distfront");
-        sensorLeft = hwMap.get(DistanceSensor.class, "distleft");
+        sensorLeft  = hwMap.get(DistanceSensor.class, "distleft");
         sensorRight = hwMap.get(DistanceSensor.class, "distright");
         // you can also cast this to a Rev2mDistanceSensor if you want to use added
         // methods associated with the Rev2mDistanceSensor class.
         Rev2mDistanceSensor sensorTimeOfFlightF = (Rev2mDistanceSensor)sensorFront;
         Rev2mDistanceSensor sensorTimeOfFlightR = (Rev2mDistanceSensor)sensorRight;
         Rev2mDistanceSensor sensorTimeOfFlightL = (Rev2mDistanceSensor)sensorLeft;
-
-
 
         leftDrive.setDirection(DcMotor.Direction.FORWARD); // Set to REVERSE if using AndyMark motors
         rightDrive.setDirection(DcMotor.Direction.FORWARD);// Set to FORWARD if using AndyMark motors
@@ -127,8 +126,6 @@ public class HardwarePushbot
         leftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         //leftArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
 
         // Define and initialize ALL installed servos.
         //leftClaw  = hwMap.get(Servo.class, "left_hand");
@@ -155,6 +152,9 @@ public class HardwarePushbot
         // and named "imu".
         imu = hwMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters);
+
+	webcam = new Camsensor();
+	webcam.init(ahwMap, 212, 54, 0);
     }
  }
 

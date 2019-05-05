@@ -196,9 +196,9 @@ public static final String Tag = "OurLog";
 
     int StartPosition;
 
-double startIMUAngle;
-double currentIMUAngle;
-double startIMUOfset;
+    double startIMUAngle;
+    double currentIMUAngle;
+    double startIMUOfset;
     double distanceDifference;
 
     double firstReading;
@@ -384,8 +384,6 @@ double startIMUOfset;
         parameters2.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
 
 
-
-
         //  Instantiate the Vuforia engine
      //vuforia = ClassFactory.getInstance().createVuforia(parameters);//!!!!!!!!!!!!!!!!!!!
 
@@ -406,8 +404,6 @@ double startIMUOfset;
         // For convenience, gather together all the trackable objects in one easily-iterable collection */
         List<VuforiaTrackable> allTrackables = new ArrayList<VuforiaTrackable>();
         allTrackables.addAll(targetsRoverRuckus);
-
-
 
         /**
          * In order for localization to work, we need to tell the system where each target is on the field, and
@@ -520,9 +516,6 @@ double startIMUOfset;
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         imu.initialize(parameters2);
         telemetry.addData("IMU", "angle (%f)", getIMUAngle());
-
-
-
 
 // Initialize the detector
 
