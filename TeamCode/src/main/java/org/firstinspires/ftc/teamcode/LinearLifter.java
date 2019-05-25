@@ -120,6 +120,10 @@ public class LinearLifter extends LinearOpMode {
             drive =  gamepad1.left_stick_y;
             turn  =  gamepad1.left_stick_x;
 
+            if (gamepad1.a) {
+                robot.webcam.detector.saveSnapshot();
+            }
+
             if (Math.abs(turn) < 0.02) {
                 turn = 0.0;
             }
