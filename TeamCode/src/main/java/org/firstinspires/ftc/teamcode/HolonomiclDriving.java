@@ -56,7 +56,7 @@ public class HolonomiclDriving extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor frontDrive = null;
+    private DcMotor backDrive = null;
     private DcMotor leftDrive = null;
     private DcMotor rightDrive = null;
     //private DcMotor midarm = null;
@@ -75,7 +75,7 @@ public class HolonomiclDriving extends LinearOpMode {
 
         leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
         rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
-        frontDrive = hardwareMap.get(DcMotor.class, "front_drive");
+        backDrive = hardwareMap.get(DcMotor.class, "back_drive");
         //midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
         /*grabber1 = hardwareMap.get(CRServo.class,  "grabber1");
         grabber2 = hardwareMap.get(CRServo.class,  "grabber2");*/
@@ -86,22 +86,27 @@ public class HolonomiclDriving extends LinearOpMode {
 
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.FORWARD);//the motors are set to turn if all positive
-        frontDrive.setDirection(DcMotor.Direction.FORWARD);
+        backDrive.setDirection(DcMotor.Direction.FORWARD);
         //midarm.setDirection(DcMotor.Direction.FORWARD);
 
 
         leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        frontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         //basearm.setDirection(DcMotor.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
         runtime.reset();
         double leftPower = 0;
         double rightPower = 0;
-        double frontPower = 0;
-        double turn;
+        double backPower = 0;
         double speedChange;//driving
+        double angle;//This is used in one stick, any direction driving
+        double max;//This is used in one stick, any direction driving
+        double setA;//This is used in one stick, any direction driving
+        double setB;//This is used in one stick, any direction driving
+        double force;//This is used in one stick, any direction driving
+
         //double midarmPower = 0;
 
 
@@ -131,35 +136,44 @@ public class HolonomiclDriving extends LinearOpMode {
             //rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
 
             speedChange = 1-(gamepad1.right_trigger * 0.8);
-            if(gamepad1.x) {
-                frontPower = -1 * speedChange;
+            if(gamepad1.x) {//move to the left
+                backPower = -1 * speedChange;
                 leftPower = 0.5 * speedChange;
-                rightPower = 0.5 * speedChange;//when going to the left or to the right, the front wheel is going two times as fast
-            } else if(gamepad1.b) {
-                frontPower = 1 * speedChange;
+                rightPower = 0.5 * speedChange;//when going to the left or to the right, the back wheel is going two times as fast
+            } else if(gamepad1.b) {//move to the right
+                backPower = 1 * speedChange;
                 leftPower = -0.5 * speedChange;
                 rightPower = -0.5 * speedChange;
-            } else if(gamepad1.y) {
-                frontPower = 0;
-                leftPower = 1 * speedChange;
-                rightPower = -1 * speedChange;
-            } else if(gamepad1.a) {
-                frontPower = 0;
+            } else if(gamepad1.y) {//move forwards
+                backPower = 0;
                 leftPower = -1 * speedChange;
                 rightPower = 1 * speedChange;
-            }  else if(gamepad1.left_bumper) {
-                frontPower = 1;
-                leftPower = 1;
-                rightPower = 1;
-            } else if(gamepad1.right_bumper) {
-                frontPower = -1;
-                leftPower = -1;
-                rightPower = -1;
-            } /*else {
-                turn = gamepad1.left_stick_x;
-                leftPower  = (gamepad1.left_stick_y - turn) * speedChange ;
-                rightPower = (gamepad1.left_stick_y + turn) * speedChange;
-            }*/
+            } else if(gamepad1.a) {//move backwards
+                backPower = 0;
+                leftPower = 1 * speedChange;
+                rightPower = -1 * speedChange;
+            }  else if(gamepad1.left_bumper) {//turn clockwise
+                backPower = 1 * speedChange;
+                leftPower = 1 * speedChange;
+                rightPower = 1 * speedChange;
+            } else if(gamepad1.right_bumper) {//turn counterclockwise
+                backPower = -1 * speedChange;
+                leftPower = -1 * speedChange;
+                rightPower = -1 * speedChange;
+            } else {//This uses the left joystick to move the robot in any direction
+                force = Math.sqrt(gamepad1.left_stick_x * gamepad1.left_stick_x + gamepad1.right_stick_y * gamepad1.right_stick_y);//This is used so you don't always have to go at full speed
+                angle = Math.atan2(gamepad1.left_stick_x, -gamepad1.left_stick_y);//This figures out the angle that the robot is supposed to go
+                setA = Math.cos(angle)/Math.cos(Math.toRadians(30));//This is an important formula for the calculations
+                setB = setA*Math.sin(Math.toRadians(30)) - Math.sin(angle);//This is an important formula for the calculations
+                backPower = setA;
+                rightPower = -setB;
+                leftPower = setB-setA;
+                max = Math.max(Math.abs(backPower), Math.abs(rightPower));//This helps figure out the maximum absolute value
+                max = Math.max(max, Math.abs(leftPower));//You can then divide all the powers by it to scale them so nothing is above 1
+                backPower = backPower/max*force;
+                rightPower = rightPower/max*force;
+                leftPower = leftPower/max*force;
+            }
 
 
 
@@ -171,10 +185,10 @@ public class HolonomiclDriving extends LinearOpMode {
             // Send calculated power to wheels
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
-            frontDrive.setPower(frontPower);
+            backDrive.setPower(backPower);
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Motors", "left (%.2f), right (%.2f), front(%.2f)", leftPower, rightPower, frontPower);
+            telemetry.addData("Motors", "left (%.2f), right (%.2f), back(%.2f)", leftPower, rightPower, backPower);
             telemetry.addData("Drive", "Change: (%.2f)", speedChange);
             /*telemetry.addData("Left", "click(%d)", leftDrive.getCurrentPosition());
             telemetry.addData("Right","click(%d)", rightDrive.getCurrentPosition());*/
