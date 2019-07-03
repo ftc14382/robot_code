@@ -137,32 +137,32 @@ public class HolonomiclDriving extends LinearOpMode {
 
             speedChange = 1-(gamepad1.right_trigger * 0.8);
             if(gamepad1.x) {//move to the left
-                backPower = -1 * speedChange;
-                leftPower = 0.5 * speedChange;
-                rightPower = 0.5 * speedChange;//when going to the left or to the right, the back wheel is going two times as fast
+                backPower = -1;
+                leftPower = 0.5;
+                rightPower = 0.5;//when going to the left or to the right, the back wheel is going two times as fast
             } else if(gamepad1.b) {//move to the right
-                backPower = 1 * speedChange;
-                leftPower = -0.5 * speedChange;
-                rightPower = -0.5 * speedChange;
+                backPower = 1;
+                leftPower = -0.5;
+                rightPower = -0.5;
             } else if(gamepad1.y) {//move forwards
                 backPower = 0;
-                leftPower = -1 * speedChange;
-                rightPower = 1 * speedChange;
+                leftPower = -1;
+                rightPower = 1;
             } else if(gamepad1.a) {//move backwards
                 backPower = 0;
-                leftPower = 1 * speedChange;
-                rightPower = -1 * speedChange;
+                leftPower = 1;
+                rightPower = -1;
             }  else if(gamepad1.left_bumper) {//turn clockwise
-                backPower = 1 * speedChange;
-                leftPower = 1 * speedChange;
-                rightPower = 1 * speedChange;
+                backPower = 1;
+                leftPower = 1;
+                rightPower = 1;
             } else if(gamepad1.right_bumper) {//turn counterclockwise
-                backPower = -1 * speedChange;
-                leftPower = -1 * speedChange;
-                rightPower = -1 * speedChange;
-            } else {//This uses the left joystick to move the robot in any direction
-                force = Math.sqrt(gamepad1.left_stick_x * gamepad1.left_stick_x + gamepad1.right_stick_y * gamepad1.right_stick_y);//This is used so you don't always have to go at full speed
-                angle = Math.atan2(gamepad1.left_stick_x, -gamepad1.left_stick_y);//This figures out the angle that the robot is supposed to go
+                backPower = -1;
+                leftPower = -1;
+                rightPower = -1;
+            } else  if(Math.abs(gamepad1.left_stick_y) + Math.abs(gamepad1.left_stick_x) > 0){//This uses the left joystick to move the robot in any direction
+                force = Math.sqrt(gamepad1.left_stick_x * gamepad1.left_stick_x + gamepad1.left_stick_y * gamepad1.left_stick_y);//This is used so you don't always have to go at full speed
+                angle = Math.atan2(gamepad1.left_stick_x, -gamepad1.left_stick_y);//Android studios uses Radians.  This figures out the angle that the robot is supposed to go
                 setA = Math.cos(angle)/Math.cos(Math.toRadians(30));//This is an important formula for the calculations
                 setB = setA*Math.sin(Math.toRadians(30)) - Math.sin(angle);//This is an important formula for the calculations
                 backPower = setA;
@@ -173,6 +173,11 @@ public class HolonomiclDriving extends LinearOpMode {
                 backPower = backPower/max*force;
                 rightPower = rightPower/max*force;
                 leftPower = leftPower/max*force;
+            } else {//Arcade Drive with right joystick
+                angle = gamepad1.right_stick_x;//It is called angle not turn because angle is already defined
+                leftPower  = -(gamepad1.right_stick_y - angle);
+                rightPower = (gamepad1.right_stick_y + angle);
+                backPower = 0.0;
             }
 
 
@@ -183,12 +188,12 @@ public class HolonomiclDriving extends LinearOpMode {
 
 
             // Send calculated power to wheels
-            leftDrive.setPower(leftPower);
-            rightDrive.setPower(rightPower);
-            backDrive.setPower(backPower);
+            leftDrive.setPower(leftPower * speedChange);
+            rightDrive.setPower(rightPower * speedChange);
+            backDrive.setPower(backPower * speedChange);
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Motors", "left (%.2f), right (%.2f), back(%.2f)", leftPower, rightPower, backPower);
+            telemetry.addData("Motors without speedChange", "left (%.2f), right (%.2f), back(%.2f)", leftPower, rightPower, backPower);
             telemetry.addData("Drive", "Change: (%.2f)", speedChange);
             /*telemetry.addData("Left", "click(%d)", leftDrive.getCurrentPosition());
             telemetry.addData("Right","click(%d)", rightDrive.getCurrentPosition());*/
