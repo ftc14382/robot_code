@@ -29,12 +29,18 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.JustLoggingAccelerationIntegrator;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 
 /**
@@ -54,6 +60,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //@Disabled
 public class HolonomiclDriving extends LinearOpMode {
 
+    // The IMU sensor object
+    BNO055IMU imu;//We will use the IMU later
+
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor backDrive = null;
@@ -69,25 +78,36 @@ public class HolonomiclDriving extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        // Set up the parameters with which we will use our IMU. Note that integration
+        // algorithm here just reports accelerations to the logcat log; it doesn't actually
+        // provide positional information.
+        BNO055IMU.Parameters parameters2 = new BNO055IMU.Parameters();
+        parameters2.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        parameters2.accelUnit = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters2.calibrationDataFile = "BNO055IMUCalibration.json"; // see the calibration sample opmode
+        parameters2.loggingEnabled = true;
+        parameters2.loggingTag = "IMU";
+        parameters2.accelerationIntegrationAlgorithm = new JustLoggingAccelerationIntegrator();
+
+        // Retrieve and initialize the IMU. We expect the IMU to be attached to an I2C port
+        // on a Core Device Interface Module, configured to be a sensor of type "AdaFruit IMU",
+        // and named "imu".
+        imu = hardwareMap.get(BNO055IMU.class, "imu");//This is getting the IMU from the hub
+        imu.initialize(parameters2);
+
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-
         leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
         rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
         backDrive = hardwareMap.get(DcMotor.class, "back_drive");
-        //midarm  = hardwareMap.get(DcMotor.class, "mid_arm");
-        /*grabber1 = hardwareMap.get(CRServo.class,  "grabber1");
-        grabber2 = hardwareMap.get(CRServo.class,  "grabber2");*/
-        //basearm = hardwareMap.get(DcMotor.class, "base_arm");
+
 
         // Most robots need the motor on one side to be reversed to drive forward
         // Reverse the motor that runs backwards when connected directly to the battery
-
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.FORWARD);//the motors are set to turn if all positive
         backDrive.setDirection(DcMotor.Direction.FORWARD);
-        //midarm.setDirection(DcMotor.Direction.FORWARD);
 
 
         leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -95,6 +115,10 @@ public class HolonomiclDriving extends LinearOpMode {
         backDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         //basearm.setDirection(DcMotor.Direction.FORWARD);
         // Wait for the game to start (driver presses PLAY)
+
+        telemetry.addData("Ready...", "Press Play to start");
+        telemetry.update();
+
         waitForStart();
         runtime.reset();
         double leftPower = 0;
@@ -106,6 +130,8 @@ public class HolonomiclDriving extends LinearOpMode {
         double setA;//This is used in one stick, any direction driving
         double setB;//This is used in one stick, any direction driving
         double force;//This is used in one stick, any direction driving
+        double turn;//Used to store how much turn power we want to add/subtract
+        double IMUOffset = getIMUAngle();//This is the offset IMU angle to start out with
 
         //double midarmPower = 0;
 
@@ -135,6 +161,10 @@ public class HolonomiclDriving extends LinearOpMode {
            // leftPower    = Range.clip(drive + turn, -1.0, 1.0) ;
             //rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
 
+            if(gamepad1.left_stick_button && gamepad1.left_trigger > 0.9) {
+                IMUOffset=getIMUAngle();//You can reset the IMU starting offset by pressing down on the left joystick and pressing the left trigger
+            }
+
             speedChange = 1-(gamepad1.right_trigger * 0.8);
             if(gamepad1.x) {//move to the left
                 backPower = -1;
@@ -152,35 +182,35 @@ public class HolonomiclDriving extends LinearOpMode {
                 backPower = 0;
                 leftPower = 1;
                 rightPower = -1;
-            }  else if(gamepad1.left_bumper) {//turn clockwise
+            }  else if(gamepad1.left_bumper) {//turn counterclockwise(was clockwise)
                 backPower = 1;
                 leftPower = 1;
                 rightPower = 1;
-            } else if(gamepad1.right_bumper) {//turn counterclockwise
+            } else if(gamepad1.right_bumper) {//turn clockwise(was counterclockwise)
                 backPower = -1;
                 leftPower = -1;
                 rightPower = -1;
-            } else  if(Math.abs(gamepad1.left_stick_y) + Math.abs(gamepad1.left_stick_x) > 0){//This uses the left joystick to move the robot in any direction
+            } else if(Math.abs(gamepad1.left_stick_y) + Math.abs(gamepad1.left_stick_x) > 0) {//This uses the left joystick to move the robot in any direction
                 force = Math.sqrt(gamepad1.left_stick_x * gamepad1.left_stick_x + gamepad1.left_stick_y * gamepad1.left_stick_y);//This is used so you don't always have to go at full speed
-                angle = Math.atan2(gamepad1.left_stick_x, -gamepad1.left_stick_y);//Android studios uses Radians.  This figures out the angle that the robot is supposed to go
+                turn = gamepad1.right_stick_x * 0.5;//You can turn the robot with the x-axis of the other stick
+                //The IMU is used to keep the robot going in the same direction
+                angle = Math.atan2(-gamepad1.left_stick_y, gamepad1.left_stick_x) - (IMUOffset - getIMUAngle());//This was x, y.  Android studios uses Radians.  This figures out the angle that the robot is supposed to go
                 setA = Math.cos(angle)/Math.cos(Math.toRadians(30));//This is an important formula for the calculations
                 setB = setA*Math.sin(Math.toRadians(30)) - Math.sin(angle);//This is an important formula for the calculations
-                backPower = setA;
-                rightPower = -setB;
-                leftPower = setB-setA;
+                backPower = setA - turn;
+                rightPower = -setB - turn;
+                leftPower = setB-setA - turn;
                 max = Math.max(Math.abs(backPower), Math.abs(rightPower));//This helps figure out the maximum absolute value
                 max = Math.max(max, Math.abs(leftPower));//You can then divide all the powers by it to scale them so nothing is above 1
                 backPower = backPower/max*force;
                 rightPower = rightPower/max*force;
                 leftPower = leftPower/max*force;
             } else {//Arcade Drive with right joystick
-                angle = gamepad1.right_stick_x;//It is called angle not turn because angle is already defined
-                leftPower  = -(gamepad1.right_stick_y - angle);
-                rightPower = (gamepad1.right_stick_y + angle);
+                turn = gamepad1.right_stick_x;
+                leftPower  = -(gamepad1.right_stick_y - turn);
+                rightPower = (gamepad1.right_stick_y + turn);
                 backPower = 0.0;
             }
-
-
 
 
 
@@ -198,6 +228,14 @@ public class HolonomiclDriving extends LinearOpMode {
             /*telemetry.addData("Left", "click(%d)", leftDrive.getCurrentPosition());
             telemetry.addData("Right","click(%d)", rightDrive.getCurrentPosition());*/
             telemetry.update();
+
+            sleep(3);//Sleep a little to give the phones a tiny break
         }
     }
+
+    public double getIMUAngle() {//This is a function that reads the IMU angle
+        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
+    }
 }
+
+
