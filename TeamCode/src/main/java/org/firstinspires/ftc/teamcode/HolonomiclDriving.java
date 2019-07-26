@@ -132,6 +132,10 @@ public class HolonomiclDriving extends LinearOpMode {
         double force;//This is used in one stick, any direction driving
         double turn;//Used to store how much turn power we want to add/subtract
         double IMUOffset = getIMUAngle();//This is the offset IMU angle to start out with
+        boolean turning = true;
+        double rotateCorrect = 0.95;
+        double robotAngle = getIMUAngle();
+        double robotTurned;
 
         //double midarmPower = 0;
 
@@ -168,49 +172,76 @@ public class HolonomiclDriving extends LinearOpMode {
             speedChange = 1-(gamepad1.right_trigger * 0.8);
             if(gamepad1.x) {//move to the left
                 backPower = -1;
-                leftPower = 0.5;
-                rightPower = 0.5;//when going to the left or to the right, the back wheel is going two times as fast
+                leftPower = 0.5 * rotateCorrect;//rotateCorrect is used to tune the robot
+                rightPower = 0.5 * rotateCorrect;//when going to the left or to the right, the back wheel is going two times as fast
+                turning = false;//This is used later to know that the robot is not turning on purpose
             } else if(gamepad1.b) {//move to the right
                 backPower = 1;
-                leftPower = -0.5;
-                rightPower = -0.5;
+                leftPower = -0.5 * rotateCorrect;
+                rightPower = -0.5 * rotateCorrect;
+                turning = false;
             } else if(gamepad1.y) {//move forwards
                 backPower = 0;
                 leftPower = -1;
                 rightPower = 1;
+                turning = false;
             } else if(gamepad1.a) {//move backwards
                 backPower = 0;
                 leftPower = 1;
                 rightPower = -1;
+                turning = false;
             }  else if(gamepad1.left_bumper) {//turn counterclockwise(was clockwise)
                 backPower = 1;
                 leftPower = 1;
                 rightPower = 1;
+                turning = true;
             } else if(gamepad1.right_bumper) {//turn clockwise(was counterclockwise)
                 backPower = -1;
                 leftPower = -1;
                 rightPower = -1;
+                turning = true;
             } else if(Math.abs(gamepad1.left_stick_y) + Math.abs(gamepad1.left_stick_x) > 0) {//This uses the left joystick to move the robot in any direction
                 force = Math.sqrt(gamepad1.left_stick_x * gamepad1.left_stick_x + gamepad1.left_stick_y * gamepad1.left_stick_y);//This is used so you don't always have to go at full speed
-                turn = gamepad1.right_stick_x * 0.5;//You can turn the robot with the x-axis of the other stick
+                //turn = gamepad1.right_stick_x * 0.5;//You can turn the robot with the x-axis of the other stick
                 //The IMU is used to keep the robot going in the same direction
-                angle = Math.atan2(-gamepad1.left_stick_y, gamepad1.left_stick_x) - (IMUOffset - getIMUAngle());//This was x, y.  Android studios uses Radians.  This figures out the angle that the robot is supposed to go
+                angle = Math.atan2(-gamepad1.left_stick_y, gamepad1.left_stick_x);// - (IMUOffset - getIMUAngle());//This was x, y.  Android studios uses Radians.  This figures out the angle that the robot is supposed to go
                 setA = Math.cos(angle)/Math.cos(Math.toRadians(30));//This is an important formula for the calculations
                 setB = setA*Math.sin(Math.toRadians(30)) - Math.sin(angle);//This is an important formula for the calculations
-                backPower = setA - turn;
-                rightPower = -setB - turn;
-                leftPower = setB-setA - turn;
+                backPower = setA;// - turn;
+                rightPower = -setB;// - turn;
+                leftPower = setB-setA;// - turn;
                 max = Math.max(Math.abs(backPower), Math.abs(rightPower));//This helps figure out the maximum absolute value
                 max = Math.max(max, Math.abs(leftPower));//You can then divide all the powers by it to scale them so nothing is above 1
                 backPower = backPower/max*force;
-                rightPower = rightPower/max*force;
-                leftPower = leftPower/max*force;
+                rightPower = rightPower/max*force * rotateCorrect;
+                leftPower = leftPower/max*force * rotateCorrect;
+                turning = false;
             } else {//Arcade Drive with right joystick
-                turn = gamepad1.right_stick_x;
-                leftPower  = -(gamepad1.right_stick_y - turn);
-                rightPower = (gamepad1.right_stick_y + turn);
-                backPower = 0.0;
+                turn = gamepad1.right_stick_x*0.5;
+                leftPower  = (gamepad1.right_stick_y - turn);
+                rightPower = -(gamepad1.right_stick_y + turn);
+                backPower = -turn;
+                turning = true;
             }
+
+            //This fuction is used to tune the robot so that it won't rotate while moving
+            robotTurned = robotAngle - getMidleAngle();//If the robot turned clockwise the robotTurned would be negative
+            robotAngle = getMidleAngle();//Update robot Angle for next cycle
+            if(turning || Math.abs(robotTurned) > 2) {
+            } else if(backPower > 0) {//the robot is moving to the right
+                if(robotTurned > 0) {//the robot is rotating counterclockwise
+                    rotateCorrect += 0.001;
+                } else if(robotTurned < 0) {//the robot is rotating counterclockwise
+                    rotateCorrect -= 0.001;
+                }
+            } else if(backPower < 0) {//the robot is moving to the left
+                if(robotTurned > 0) {//the robot is rotating counterclockwise
+                    rotateCorrect -= 0.001;
+                } else if(robotTurned < 0) {//the robot is rotating counterclockwise
+                    rotateCorrect += 0.001;
+                }
+            }
+
 
 
 
@@ -222,6 +253,7 @@ public class HolonomiclDriving extends LinearOpMode {
             rightDrive.setPower(rightPower * speedChange);
             backDrive.setPower(backPower * speedChange);
             // Show the elapsed game time and wheel power.
+            telemetry.addData("SideWays moving", "tuning %.2f", rotateCorrect);
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Motors without speedChange", "left (%.2f), right (%.2f), back(%.2f)", leftPower, rightPower, backPower);
             telemetry.addData("Drive", "Change: (%.2f)", speedChange);
@@ -236,6 +268,23 @@ public class HolonomiclDriving extends LinearOpMode {
     public double getIMUAngle() {//This is a function that reads the IMU angle
         return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
     }
+
+    public double getMidleAngle() {
+        double firstReading = getIMUAngle();
+        double secondReading = getIMUAngle();
+        double thirdReading = getIMUAngle();
+        double max1 = Math.max(firstReading, secondReading);
+        double max2 = Math.max(secondReading, thirdReading);
+        double max3 = Math.max(firstReading, thirdReading);
+        if(max1 == max2) {
+            return max3;
+        } else if(max1 == max3) {
+            return max2;
+        } else{
+            return max1;
+        }
+    }
+
 }
 
 
